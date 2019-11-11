@@ -14,6 +14,7 @@ import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.segway.robot.algo.Pose2D;
 import com.segway.robot.sdk.base.bind.ServiceBinder;
 import com.segway.robot.sdk.locomotion.head.Head;
 import com.segway.robot.sdk.locomotion.sbv.AngularVelocity;
@@ -28,8 +29,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Head mHead;
     Base mBase;
     boolean isBind = false;
-
-    static final float RADIUS = (float) 0.23;
 
     Button mBaseLeft;
     Button mBaseRight;
@@ -54,43 +53,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 @Override
                 public void run() {
                     // get robot head pitch value, the value is angle between head and base int the pitch direction.
-                    mBasePitchValue.setText(Util.floatToString(mHead.getPitchRespectBase().getAngle()));
+                    mBasePitchValue.setText("Base Pitch: " + Util.floatToString(mHead.getPitchRespectBase().getAngle()));
                     // get robot head yaw value, the value is angle between head and base int the yaw direction.
-                    mBaseYawValue.setText(Util.floatToString(mHead.getYawRespectBase().getAngle()));
+                    mBaseYawValue.setText("Base Yaw: " + Util.floatToString(mHead.getYawRespectBase().getAngle()));
                     // get robot head yaw value, the value is angle between head and world int the yaw direction.
-                    mWorldYawValue.setText(Util.floatToString(mHead.getWorldYaw().getAngle()));
+                    mWorldYawValue.setText("World Yaw: " + Util.floatToString(mHead.getWorldYaw().getAngle()));
                     // get robot head pitch value, the value is angle between head and world int the pitch direction.
-                    mWorldPitchValue.setText(Util.floatToString(mHead.getWorldPitch().getAngle()));
+                    mWorldPitchValue.setText("World Pitch: " + Util.floatToString(mHead.getWorldPitch().getAngle()));
                     final AngularVelocity av = mBase.getAngularVelocity();
                     final LinearVelocity lv = mBase.getLinearVelocity();
-                    mAngularVelocity.setText("AngularVelocity:" + av.getSpeed());
-                    mLinearVelocity.setText("LinearVelocity:" + lv.getSpeed());
+                    mAngularVelocity.setText("AngularVelocity: " + av.getSpeed());
+                    mLinearVelocity.setText("LinearVelocity: " + lv.getSpeed());
                 }
             });
-        }
-    };
-
-    private ServiceBinder.BindStateListener mServiceBindListener = new ServiceBinder.BindStateListener() {
-        @Override
-        public void onBind() {
-            isBind = true;
-            // get robot head current movement pattern.
-            /*switch (mHead.getMode()) {
-                case Head.MODE_ORIENTATION_LOCK:
-                    ((RadioButton) findViewById(R.id.lock)).setChecked(true);
-                    break;
-                case Head.MODE_SMOOTH_TACKING:
-                    ((RadioButton) findViewById(R.id.smooth_track)).setChecked(true);
-                    break;
-                default:
-                    break;
-            }*/
-            mTimer.schedule(mTimerTask, 50, 50);
-        }
-
-        @Override
-        public void onUnbind(String reason) {
-            isBind = false;
         }
     };
 
@@ -118,7 +93,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // get Head instance.
         mHead = Head.getInstance();
         // bindService, if not, all Head api will not work.
-        mHead.bindService(getApplicationContext(), mServiceBindListener);
+        mHead.bindService(getApplicationContext(), new ServiceBinder.BindStateListener() {
+            @Override
+            public void onBind() {
+                isBind = true;
+                // get robot head current movement pattern.
+            /*switch (mHead.getMode()) {
+                case Head.MODE_ORIENTATION_LOCK:
+                    ((RadioButton) findViewById(R.id.lock)).setChecked(true);
+                    break;
+                case Head.MODE_SMOOTH_TACKING:
+                    ((RadioButton) findViewById(R.id.smooth_track)).setChecked(true);
+                    break;
+                default:
+                    break;
+            }*/
+                mTimer.schedule(mTimerTask, 50, 50);
+            }
+
+            @Override
+            public void onUnbind(String reason) {
+                isBind = false;
+            }
+        });
+        mBase = Base.getInstance();
+        mBase.bindService(getApplicationContext(), new ServiceBinder.BindStateListener() {
+            @Override
+            public void onBind() { }
+            @Override
+            public void onUnbind(String reason) { }
+        });
+
         /*
         mMode.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -179,6 +184,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mBaseLeft.setOnClickListener(this);
         mBaseRight.setOnClickListener(this);
         mAhead.setOnClickListener(this);
+        mResetAll.setOnClickListener(this);
 
         mBasePitchValue = findViewById(R.id.base_pitch);
         mWorldPitchValue = findViewById(R.id.world_pitch);
@@ -197,21 +203,47 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mHead.resetOrientation();
                 mBase.setAngularVelocity(0);
                 mBase.setLinearVelocity(0);
+                mHead.setHeadLightMode(0);
                 break;
             case R.id.left:
-                mHead.setWorldPitch(Util.getEditTextFloatValue(mWorldPitch));
+
+                mBase.cleanOriginalPoint();
+                Pose2D left_pose2D = mBase.getOdometryPose(-1);
+                mBase.setOriginalPoint(left_pose2D);
+                mBase.addCheckPoint(0, 0, (float)(15*Math.PI/180));
+                //float left_value = mHead.getYawRespectBase().getAngle();
+                //left_value += 15*Math.PI/180;
+                //mHead.setWorldYaw(left_value);
+                mHead.setHeadLightMode(1);
                 break;
             case R.id.right:
-                mHead.setWorldYaw(Util.getEditTextFloatValue(mWorldYaw));
+                mBase.cleanOriginalPoint();
+                Pose2D right_pose2D = mBase.getOdometryPose(-1);
+                mBase.setOriginalPoint(right_pose2D);
+                mBase.addCheckPoint(0, 0, (float)(-15*Math.PI/180));
+                //float right_value = mHead.getYawRespectBase().getAngle();
+                //right_value -= 15*Math.PI/180;
+                //mHead.setWorldYaw(right_value);
+                mHead.setHeadLightMode(2);
                 break;
             case R.id.up:
-                mHead.setYawRespectBase(Util.getEditTextFloatValue(mBaseYaw));
+                float up_value = mHead.getWorldPitch().getAngle();
+                up_value += 15*Math.PI/180;
+                mHead.setWorldPitch(up_value);
+                mHead.setHeadLightMode(3);
                 break;
             case R.id.down:
-                mHead.setYawRespectBase(Util.getEditTextFloatValue(mBaseYaw));
+                float down_value = mHead.getWorldPitch().getAngle();
+                down_value -= 15*Math.PI/180;
+                mHead.setWorldPitch(down_value);
+                mHead.setHeadLightMode(4);
                 break;
             case R.id.ahead:
-                mHead.setPitchAngularVelocity(Util.getEditTextFloatValue(mSpeedPitch));
+                mBase.cleanOriginalPoint();
+                Pose2D ahead_pose2D = mBase.getOdometryPose(-1);
+                mBase.setOriginalPoint(ahead_pose2D);
+                mBase.addCheckPoint(.25f, 0, 0);
+                mHead.setHeadLightMode(5);
                 break;
                 /*
             case R.id.yaw_speed:
