@@ -1,6 +1,5 @@
 <resources>
-    <string name="app_name">MyLoomoApp</string>
-    <string name="action_settings">Settings</string>
+    <string name="app_name">My Loomo</string>
     <string name="head_pitch">Head Pitch</string>
     <string name="move_ahead">MOVE AHEAD</string>
     <string name="body_yaw">Body Yaw</string>
@@ -9,5 +8,7 @@
     <string name="down">DOWN</string>
     <string name="up">UP</string>
     <string name="right">RIGHT</string>
-    <string name="reset_all">RESET ALL</string>
+    <string name="reset_head">RESET HEAD</string>
+    <string name="close_app">Close App</string>
+    <string name="title_activity_vision">VisionActivity</string>
 </resources>

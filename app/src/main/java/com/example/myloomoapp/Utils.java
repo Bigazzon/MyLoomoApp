@@ -20,19 +20,19 @@ import java.util.zip.ZipFile;
  * Created by sunguangshan on 2016/7/26.
  */
 
-public class Util {
-    private static final String TAG = "Util";
+public class Utils {
+    private static final String TAG = "Utils";
+
+    static int HEAD_PITCH_ANGLE = 15; //degrees
+    static int BASE_YAW_ANGLE = 10;   //degrees
+    static float STEP_SIZE = 0.3f;    //meters
 
     public static boolean isEditTextEmpty(EditText editText) {
         if (editText == null) {
             return false;
         }
         String text = editText.getText().toString().trim();
-        if (TextUtils.isEmpty(text)) {
-            return true;
-        } else {
-            return false;
-        }
+        return TextUtils.isEmpty(text);
     }
 
     public static String floatToString(float f) {
