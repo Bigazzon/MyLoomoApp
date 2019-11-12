@@ -28,11 +28,11 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
+        android:backgroundTint="@android:color/holo_red_dark"
         android:tint="@android:color/white"
-        app:backgroundTint="@android:color/holo_red_dark"
-        app:fabSize="auto"
+        app:borderWidth="0dp"
+        app:fabSize="normal"
         app:maxImageSize="35dp"
-        app:rippleColor="#000000"
         app:srcCompat="@android:drawable/ic_menu_camera" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
