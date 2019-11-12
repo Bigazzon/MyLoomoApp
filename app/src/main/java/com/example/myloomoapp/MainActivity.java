@@ -26,6 +26,10 @@ import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
+    static int HEAD_PITCH_ANGLE = 15; //degrees
+    static int BASE_YAW_ANGLE = 10;   //degrees
+    static float STEP_SIZE = 0.25f;      //meters
+
     Head mHead;
     Base mBase;
     boolean isBind = false;
@@ -44,7 +48,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     TextView mAngularVelocity;
     TextView mLinearVelocity;
 
-    View mEditTextFocus;
+    //View mEditTextFocus;
     Timer mTimer = new Timer();
     TimerTask mTimerTask = new TimerTask() {
         @Override
@@ -53,17 +57,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 @Override
                 public void run() {
                     // get robot head pitch value, the value is angle between head and base int the pitch direction.
-                    mBasePitchValue.setText("Base Pitch: " + Util.floatToString(mHead.getPitchRespectBase().getAngle()));
+                    mBasePitchValue.setText(String.format("Base Pitch: %s", Util.floatToString(mHead.getPitchRespectBase().getAngle())));
                     // get robot head yaw value, the value is angle between head and base int the yaw direction.
-                    mBaseYawValue.setText("Base Yaw: " + Util.floatToString(mHead.getYawRespectBase().getAngle()));
+                    mBaseYawValue.setText(String.format("Base Yaw: %s", Util.floatToString(mHead.getYawRespectBase().getAngle())));
                     // get robot head yaw value, the value is angle between head and world int the yaw direction.
-                    mWorldYawValue.setText("World Yaw: " + Util.floatToString(mHead.getWorldYaw().getAngle()));
+                    mWorldYawValue.setText(String.format("World Yaw: %s", Util.floatToString(mHead.getWorldYaw().getAngle())));
                     // get robot head pitch value, the value is angle between head and world int the pitch direction.
-                    mWorldPitchValue.setText("World Pitch: " + Util.floatToString(mHead.getWorldPitch().getAngle()));
+                    mWorldPitchValue.setText(String.format("World Pitch: %s", Util.floatToString(mHead.getWorldPitch().getAngle())));
                     final AngularVelocity av = mBase.getAngularVelocity();
                     final LinearVelocity lv = mBase.getLinearVelocity();
-                    mAngularVelocity.setText("AngularVelocity: " + av.getSpeed());
-                    mLinearVelocity.setText("LinearVelocity: " + lv.getSpeed());
+                    mAngularVelocity.setText(String.format("AngularVelocity: %s", av.getSpeed()));
+                    mLinearVelocity.setText(String.format("LinearVelocity: %s", lv.getSpeed()));
                 }
             });
         }
@@ -210,9 +214,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mBase.cleanOriginalPoint();
                 Pose2D left_pose2D = mBase.getOdometryPose(-1);
                 mBase.setOriginalPoint(left_pose2D);
-                mBase.addCheckPoint(0, 0, (float)(15*Math.PI/180));
+                mBase.addCheckPoint(0, 0, (float)(BASE_YAW_ANGLE*Math.PI/180));
                 //float left_value = mHead.getYawRespectBase().getAngle();
-                //left_value += 15*Math.PI/180;
+                //left_value += BASE_YAW_ANGLE*Math.PI/180;
                 //mHead.setWorldYaw(left_value);
                 mHead.setHeadLightMode(1);
                 break;
@@ -220,21 +224,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mBase.cleanOriginalPoint();
                 Pose2D right_pose2D = mBase.getOdometryPose(-1);
                 mBase.setOriginalPoint(right_pose2D);
-                mBase.addCheckPoint(0, 0, (float)(-15*Math.PI/180));
+                mBase.addCheckPoint(0, 0, (float)(-BASE_YAW_ANGLE*Math.PI/180));
                 //float right_value = mHead.getYawRespectBase().getAngle();
-                //right_value -= 15*Math.PI/180;
+                //right_value -= BASE_YAW_ANGLE*Math.PI/180;
                 //mHead.setWorldYaw(right_value);
                 mHead.setHeadLightMode(2);
                 break;
             case R.id.up:
                 float up_value = mHead.getWorldPitch().getAngle();
-                up_value += 15*Math.PI/180;
+                up_value += HEAD_PITCH_ANGLE*Math.PI/180;
                 mHead.setWorldPitch(up_value);
                 mHead.setHeadLightMode(3);
                 break;
             case R.id.down:
                 float down_value = mHead.getWorldPitch().getAngle();
-                down_value -= 15*Math.PI/180;
+                down_value -= HEAD_PITCH_ANGLE*Math.PI/180;
                 mHead.setWorldPitch(down_value);
                 mHead.setHeadLightMode(4);
                 break;
@@ -242,7 +246,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mBase.cleanOriginalPoint();
                 Pose2D ahead_pose2D = mBase.getOdometryPose(-1);
                 mBase.setOriginalPoint(ahead_pose2D);
-                mBase.addCheckPoint(.25f, 0, 0);
+                mBase.addCheckPoint(STEP_SIZE, 0, 0);
                 mHead.setHeadLightMode(5);
                 break;
                 /*
