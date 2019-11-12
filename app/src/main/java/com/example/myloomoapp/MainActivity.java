@@ -27,6 +27,10 @@ import static com.example.myloomoapp.Utils.HEAD_PITCH_ANGLE;
 import static com.example.myloomoapp.Utils.STEP_SIZE;
 import static com.example.myloomoapp.Utils.floatToString;
 
+/**
+ * Created by rbigazzi on 2019/11/8.
+ */
+
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     Head mHead;

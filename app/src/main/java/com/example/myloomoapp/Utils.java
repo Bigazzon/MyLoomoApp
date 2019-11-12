@@ -1,23 +1,16 @@
 package com.example.myloomoapp;
 
+import android.graphics.Bitmap;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.EditText;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.util.Enumeration;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
- * Created by sunguangshan on 2016/7/26.
+ * Created by rbigazzi on 2019/11/8.
  */
 
 public class Utils {
@@ -35,7 +28,7 @@ public class Utils {
         return TextUtils.isEmpty(text);
     }
 
-    public static String floatToString(float f) {
+    static String floatToString(float f) {
         return String.valueOf(f);
     }
 
@@ -43,5 +36,4 @@ public class Utils {
         String text = editText.getText().toString().trim();
         return Float.parseFloat(text);
     }
-
 }

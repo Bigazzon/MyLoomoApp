@@ -9,8 +9,8 @@
     <string name="up">UP</string>
     <string name="right">RIGHT</string>
     <string name="reset_head">RESET HEAD</string>
-    <string name="close_app">Close App</string>
     <string name="title_activity_vision">VisionActivity</string>
     <string name="rgb_camera_640x480">RGB Camera (640x480)</string>
     <string name="depth_camera_320x240">Depth Camera (320x240)</string>
+    <string name="on_off">On/Off</string>
 </resources>
