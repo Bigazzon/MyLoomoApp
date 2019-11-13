@@ -132,7 +132,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_begin="270dp" />
+        app:layout_constraintGuide_begin="260dp" />
 
     <TextView
         android:id="@+id/linear_velocity"
@@ -154,10 +154,9 @@
 
     <Button
         android:id="@+id/reset_all"
-        android:layout_width="0dp"
+        android:layout_width="190dp"
         android:layout_height="wrap_content"
         android:text="@string/reset_head"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/ahead"
         app:layout_constraintTop_toBottomOf="@+id/movement" />
 

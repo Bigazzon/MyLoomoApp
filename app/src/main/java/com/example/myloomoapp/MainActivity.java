@@ -1,6 +1,9 @@
 package com.example.myloomoapp;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -8,17 +11,27 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.segway.robot.algo.Pose2D;
 import com.segway.robot.sdk.base.bind.ServiceBinder;
+import com.segway.robot.sdk.baseconnectivity.Message;
+import com.segway.robot.sdk.baseconnectivity.MessageConnection;
+import com.segway.robot.sdk.baseconnectivity.MessageRouter;
+import com.segway.robot.sdk.connectivity.RobotException;
+import com.segway.robot.sdk.connectivity.RobotMessageRouter;
+import com.segway.robot.sdk.connectivity.StringMessage;
 import com.segway.robot.sdk.locomotion.head.Head;
 import com.segway.robot.sdk.locomotion.sbv.AngularVelocity;
 import com.segway.robot.sdk.locomotion.sbv.Base;
 import com.segway.robot.sdk.locomotion.sbv.LinearVelocity;
 
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -33,8 +46,12 @@ import static com.example.myloomoapp.Utils.floatToString;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
+    private static final String TAG = "MainActivity";
+
     Head mHead;
     Base mBase;
+    RobotMessageRouter mRobotMessageRouter = null;
+    MessageConnection mMessageConnection = null;
     boolean isBindH = false;
     boolean isBindB = false;
 
@@ -107,6 +124,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitle("Movement Module");
         setSupportActionBar(toolbar);
 
         FloatingActionButton fab = findViewById(R.id.change_activity);
@@ -114,16 +132,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onClick(View view) {
                 Intent myIntent = new Intent(MainActivity.this, VisionActivity.class);
-                //myIntent.putExtra("key", value); //Optional parameters
+                float passed = mHead.getWorldPitch().getAngle();
+                myIntent.putExtra("passed_pitch_value_v", passed); //Optional parameters
+                Log.d(TAG,Float.toString(passed));
                 MainActivity.this.startActivity(myIntent);
             }
         });
 
         init();
 
-        // get Head instance.
         mHead = Head.getInstance();
-        // bindService, if not, all Head api will not work.
         mHead.bindService(getApplicationContext(), mHeadServiceBindListener);
         mBase = Base.getInstance();
         mBase.bindService(getApplicationContext(), mBaseServiceBindListener);
@@ -156,23 +174,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 });
             }
         };
-        // get Head instance.
         mHead = Head.getInstance();
-        // bindService, if not, all Head api will not work.
-        mHead.bindService(getApplicationContext(), mHeadServiceBindListener);
+        mHead.bindService(this, mHeadServiceBindListener);
         mBase = Base.getInstance();
-        mBase.bindService(getApplicationContext(), mBaseServiceBindListener);
+        mBase.bindService(this, mBaseServiceBindListener);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Intent intent = this.getIntent();
+        if (intent.hasExtra("passed_pitch_value_m")) {
+            float passed = Objects.requireNonNull(intent.getExtras()).getFloat("passed_pitch_value_m");
+            mHead.setWorldPitch(passed);
+        }
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        if (isBindH) {
-            mHead.unbindService();
-        }
-        if (isBindB) {
-            mBase.unbindService();
-        }
+        mHead.unbindService();
+        mBase.unbindService();
         mTimerTask = null;
         mTimer.cancel();
         mTimer = null;

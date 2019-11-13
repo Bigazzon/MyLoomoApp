@@ -13,4 +13,6 @@
     <string name="rgb_camera_640x480">RGB Camera (640x480)</string>
     <string name="depth_camera_320x240">Depth Camera (320x240)</string>
     <string name="on_off">On/Off</string>
+    <string name="title_activity_main2">Main2Activity</string>
+    <string name="title_activity_connection">ConnectionActivity</string>
 </resources>

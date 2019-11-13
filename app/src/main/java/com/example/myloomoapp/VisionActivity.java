@@ -1,11 +1,13 @@
 package com.example.myloomoapp;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 import com.segway.robot.sdk.base.bind.ServiceBinder;
+import com.segway.robot.sdk.locomotion.head.Head;
 import com.segway.robot.sdk.vision.Vision;
 import com.segway.robot.sdk.vision.stream.StreamInfo;
 import com.segway.robot.sdk.vision.stream.StreamType;
@@ -17,38 +19,37 @@ import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CompoundButton;
-import android.widget.Switch;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
+import java.util.Objects;
 
 /**
  * Created by rbigazzi on 2019/11/8.
  */
 
-public class VisionActivity extends AppCompatActivity implements CompoundButton.OnCheckedChangeListener {
+public class VisionActivity extends AppCompatActivity {
 
-    private static final String TAG = "VisionSampleActivity";
+    private static final String TAG = "VisionActivity";
 
     private Vision mVision;
+    private Head mHead;
 
     private SurfaceView mColorSurfaceView;
     private SurfaceView mDepthSurfaceView;
 
-    private Switch mSwitch;
+    boolean isBindV;
+    boolean isBindH;
 
     private ServiceBinder.BindStateListener mServiceBindListener = new ServiceBinder.BindStateListener() {
         @Override
         public void onBind() {
-            Log.d(TAG, "onBind() called");
+            isBindV = true;
+            start();
         }
 
         @Override
         public void onUnbind(String reason) {
-            Log.d(TAG, "onUnbind() called with: reason = [" + reason + "]");
+            isBindV = false;
+            stop();
         }
     };
 
@@ -57,6 +58,7 @@ public class VisionActivity extends AppCompatActivity implements CompoundButton.
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_vision);
         Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitle("Vision Module");
         setSupportActionBar(toolbar);
 
         FloatingActionButton fab = findViewById(R.id.change_activity_v);
@@ -64,11 +66,29 @@ public class VisionActivity extends AppCompatActivity implements CompoundButton.
             @Override
             public void onClick(View view) {
                 Intent myIntent = new Intent(VisionActivity.this, MainActivity.class);
-                //myIntent.putExtra("key", value); //Optional parameters
+                float passed = mHead.getWorldPitch().getAngle();
+                myIntent.putExtra("passed_pitch_value_m", passed); //Optional parameters
                 VisionActivity.this.startActivity(myIntent);
             }
         });
+        View parentLayout = findViewById(android.R.id.content);
+        Snackbar snackbar = Snackbar.make(parentLayout, "Waiting for Vision Module to Start...", Snackbar.LENGTH_LONG);
+        View sbView = snackbar.getView();
+        sbView.setBackgroundColor(Color.parseColor("#000000"));
+        snackbar.show();
         // get Vision SDK instance
+        mHead = Head.getInstance();
+        mHead.bindService(this, new ServiceBinder.BindStateListener() {
+            @Override
+            public void onBind() {
+                isBindH = true;
+            }
+
+            @Override
+            public void onUnbind(String reason) {
+                isBindH = false;
+            }
+        });
         mVision = Vision.getInstance();
         mVision.bindService(this, mServiceBindListener);
         init();
@@ -77,18 +97,27 @@ public class VisionActivity extends AppCompatActivity implements CompoundButton.
     @Override
     protected void onResume() {
         super.onResume();
+        Intent intent = this.getIntent();
+        float passed = Objects.requireNonNull(intent.getExtras()).getFloat("passed_pitch_value_v");
+        mHead.setWorldPitch(passed);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
+        mHead.unbindService();
+        mVision.unbindService();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mHead.unbindService();
         mVision.unbindService();
         finish();
     }
 
     public synchronized void start() {
-        Log.d(TAG, "start() called");
-
         // Get activated stream info from Vision Service. Streams are pre-config.
         StreamInfo[] streamInfos = mVision.getActivatedStreamInfo();
         for (StreamInfo info : streamInfos) {
@@ -116,13 +145,14 @@ public class VisionActivity extends AppCompatActivity implements CompoundButton.
                     // preview depth stream
                     mVision.startPreview(StreamType.DEPTH, mDepthSurfaceView.getHolder().getSurface());
                     break;
+                case StreamType.FISH_EYE:
+                    break;
             }
         }
 
     }
 
     public synchronized void stop() {
-        Log.d(TAG, "stop() called");
         StreamInfo[] streamInfos = mVision.getActivatedStreamInfo();
 
         for (StreamInfo info : streamInfos) {
@@ -135,17 +165,20 @@ public class VisionActivity extends AppCompatActivity implements CompoundButton.
                     // Stop depth preview
                     mVision.stopPreview(StreamType.DEPTH);
                     break;
+                case StreamType.FISH_EYE:
+                    break;
             }
         }
     }
 
     public void init() {
-        mSwitch = findViewById(R.id.switch_vision);
-        mSwitch.setOnCheckedChangeListener(this);
+        isBindV = false;
+        isBindH = false;
         mColorSurfaceView = findViewById(R.id.color_view);
         mDepthSurfaceView = findViewById(R.id.depth_view);
     }
 
+    /*
     private long startTimeColor = System.currentTimeMillis();
 
     private void saveColorToFile(final Bitmap bitmap) {
@@ -156,7 +189,7 @@ public class VisionActivity extends AppCompatActivity implements CompoundButton.
             @Override
             public void run() {
                 startTimeColor = System.currentTimeMillis();
-                File f = new File(getExternalFilesDir(null).getAbsolutePath() + "/C" + System.currentTimeMillis() + ".png");
+                File f = new File(Objects.requireNonNull(getExternalFilesDir(null)).getAbsolutePath() + "/C" + System.currentTimeMillis() + ".png");
                 Log.d(TAG, "saveBitmapToFile(): " + f.getAbsolutePath());
                 try {
                     FileOutputStream fOut = new FileOutputStream(f);
@@ -169,8 +202,10 @@ public class VisionActivity extends AppCompatActivity implements CompoundButton.
             }
         }).start();
     }
+    */
 
 
+    /*
     private static final int TIME_PERIOD = 5 * 1000;
 
     private long startTimeDepth = System.currentTimeMillis();
@@ -183,7 +218,7 @@ public class VisionActivity extends AppCompatActivity implements CompoundButton.
             @Override
             public void run() {
                 startTimeDepth = System.currentTimeMillis();
-                File f = new File(getExternalFilesDir(null).getAbsolutePath() + "/D" + System.currentTimeMillis() + ".png");
+                File f = new File(Objects.requireNonNull(getExternalFilesDir(null)).getAbsolutePath() + "/D" + System.currentTimeMillis() + ".png");
                 Log.d(TAG, "saveBitmapToFile(): " + f.getAbsolutePath());
                 try {
                     FileOutputStream fOut = new FileOutputStream(f);
@@ -196,7 +231,6 @@ public class VisionActivity extends AppCompatActivity implements CompoundButton.
                 }
             }
         }).start();
-
     }
 
     private Bitmap depth2Grey(Bitmap img) {
@@ -225,15 +259,5 @@ public class VisionActivity extends AppCompatActivity implements CompoundButton.
         result.setPixels(pixels, 0, width, 0, 0, width, height);
         return result;
     }
-
-    @Override
-    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        if (buttonView.getId() == R.id.switch_vision) {
-            if (isChecked) {
-                start();
-            } else {
-                stop();
-            }
-        }
-    }
+    */
 }
