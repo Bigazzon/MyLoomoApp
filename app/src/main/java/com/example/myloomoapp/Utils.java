@@ -2,6 +2,7 @@ package com.example.myloomoapp;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.hardware.Camera;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Environment;
@@ -26,6 +27,9 @@ public class Utils {
     static int HEAD_PITCH_ANGLE = 15; //degrees
     static int BASE_YAW_ANGLE = 10;   //degrees
     static float STEP_SIZE = 0.3f;    //meters
+
+    static final int REQUEST_CAPTURE_IMAGE = 100;
+    static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 1888;
 
     public static boolean isEditTextEmpty(EditText editText) {
         if (editText == null) {
@@ -146,5 +150,16 @@ public class Utils {
             e.printStackTrace();
         }
         return name;
+    }
+
+    public static Camera getCameraInstance(){
+        Camera c = null;
+        try {
+            c = Camera.open(); // attempt to get a Camera instance
+        }
+        catch (Exception e){
+            // Camera is not available (in use or does not exist)
+        }
+        return c; // returns null if camera is unavailable
     }
 }

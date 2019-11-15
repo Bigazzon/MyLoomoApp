@@ -12,7 +12,14 @@
     <string name="title_activity_vision">VisionActivity</string>
     <string name="rgb_camera_640x480">RGB Camera (640x480)</string>
     <string name="depth_camera_320x240">Depth Camera (320x240)</string>
+    <string name="fish_camera_640x480">Fisheye Camera (640x480)</string>
     <string name="on_off">On/Off</string>
     <string name="title_activity_main2">Main2Activity</string>
     <string name="title_activity_connection">ConnectionActivity</string>
+    <string name="rgb_video">RGB Video</string>
+    <string name="depth_video">Depth Video</string>
+    <string name="head_video">Head Video</string>
+    <string name="fish_video">Fisheye Video</string>
+    <string name="request_permission">This sample needs camera permission.</string>
+    <string name="head_camera">Head Camera</string>
 </resources>

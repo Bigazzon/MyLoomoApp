@@ -1,9 +1,5 @@
 package com.example.myloomoapp;
 
-import android.content.Context;
-import android.content.Intent;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -11,183 +7,139 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
-import android.util.Log;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.ImageView;
 
-import com.segway.robot.algo.Pose2D;
 import com.segway.robot.sdk.base.bind.ServiceBinder;
-import com.segway.robot.sdk.baseconnectivity.Message;
-import com.segway.robot.sdk.baseconnectivity.MessageConnection;
-import com.segway.robot.sdk.baseconnectivity.MessageRouter;
-import com.segway.robot.sdk.connectivity.RobotException;
-import com.segway.robot.sdk.connectivity.RobotMessageRouter;
-import com.segway.robot.sdk.connectivity.StringMessage;
 import com.segway.robot.sdk.locomotion.head.Head;
-import com.segway.robot.sdk.locomotion.sbv.AngularVelocity;
 import com.segway.robot.sdk.locomotion.sbv.Base;
-import com.segway.robot.sdk.locomotion.sbv.LinearVelocity;
+import com.segway.robot.sdk.vision.Vision;
 
 import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
-
-import static com.example.myloomoapp.Utils.BASE_YAW_ANGLE;
-import static com.example.myloomoapp.Utils.HEAD_PITCH_ANGLE;
-import static com.example.myloomoapp.Utils.STEP_SIZE;
-import static com.example.myloomoapp.Utils.floatToString;
 
 /**
  * Created by rbigazzi on 2019/11/8.
  */
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
 
     Head mHead;
     Base mBase;
-    RobotMessageRouter mRobotMessageRouter = null;
-    MessageConnection mMessageConnection = null;
+    Vision mVision;
+
+    FloatingActionButton fab;
+
+    ImageView head_view;
+
     boolean isBindH = false;
     boolean isBindB = false;
-
-    Button mBaseLeft;
-    Button mBaseRight;
-    Button mHeadUp;
-    Button mHeadDown;
-    Button mAhead;
-    Button mResetAll;
-
-    TextView mWorldYawValue;
-    TextView mWorldPitchValue;
-    TextView mBaseYawValue;
-    TextView mBasePitchValue;
-    TextView mAngularVelocity;
-    TextView mLinearVelocity;
-
-    //View mEditTextFocus;
-    Timer mTimer = new Timer();
-    TimerTask mTimerTask = new TimerTask() {
-        @Override
-        public void run() {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    // get robot head pitch value, the value is angle between head and base int the pitch direction.
-                    mBasePitchValue.setText(String.format("Base Pitch: %s", floatToString(mHead.getPitchRespectBase().getAngle())));
-                    // get robot head yaw value, the value is angle between head and base int the yaw direction.
-                    mBaseYawValue.setText(String.format("Base Yaw: %s", floatToString(mHead.getYawRespectBase().getAngle())));
-                    // get robot head yaw value, the value is angle between head and world int the yaw direction.
-                    mWorldYawValue.setText(String.format("World Yaw: %s", floatToString(mHead.getWorldYaw().getAngle())));
-                    // get robot head pitch value, the value is angle between head and world int the pitch direction.
-                    mWorldPitchValue.setText(String.format("World Pitch: %s", floatToString(mHead.getWorldPitch().getAngle())));
-                    final AngularVelocity av = mBase.getAngularVelocity();
-                    final LinearVelocity lv = mBase.getLinearVelocity();
-                    mAngularVelocity.setText(String.format("AngularVelocity: %s", av.getSpeed()));
-                    mLinearVelocity.setText(String.format("LinearVelocity: %s", lv.getSpeed()));
-                }
-            });
-        }
-    };
+    boolean isBindV = false;
 
     private ServiceBinder.BindStateListener mHeadServiceBindListener = new ServiceBinder.BindStateListener() {
         @Override
         public void onBind() {
             isBindH = true;
-            mTimer.schedule(mTimerTask, 50, 50);
         }
-
         @Override
         public void onUnbind(String reason) {
             isBindH = false;
         }
     };
-
     private ServiceBinder.BindStateListener mBaseServiceBindListener = new ServiceBinder.BindStateListener() {
         @Override
         public void onBind() {
             isBindB = true;
         }
-
         @Override
         public void onUnbind(String reason) {
             isBindB = false;
         }
     };
+    private ServiceBinder.BindStateListener mVisionServiceBindListener = new ServiceBinder.BindStateListener() {
+        @Override
+        public void onBind() {
+            isBindV = true;
+            fab.show();
+        }
+        @Override
+        public void onUnbind(String reason) {
+            isBindV = false;
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setTitle("Movement Module");
+        toolbar.setTitle("Locomotion Module");
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = findViewById(R.id.change_activity);
+        fab = findViewById(R.id.change_activity);
+        fab.setTag(0);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent myIntent = new Intent(MainActivity.this, VisionActivity.class);
-                float passed = mHead.getWorldPitch().getAngle();
-                myIntent.putExtra("passed_pitch_value_v", passed); //Optional parameters
-                Log.d(TAG,Float.toString(passed));
-                MainActivity.this.startActivity(myIntent);
+                if((Integer)fab.getTag()==0) {
+                    fab.setTag(1);
+                    Objects.requireNonNull(getSupportActionBar()).setTitle("Vision Module (RGB and Depth)");
+                    VisionFragment1 visionFragment1 = new VisionFragment1(mVision);
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.frame, visionFragment1).commit();
+                }
+                else if((Integer)fab.getTag()==1) {
+                    fab.setTag(2);
+                    mVision.unbindService();
+                    Objects.requireNonNull(getSupportActionBar()).setTitle("Vision Module (Fisheye and Head)");
+                    VisionFragment2 visionFragment2 = new VisionFragment2();
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.frame, visionFragment2).commit();
+                }
+                else {
+                    fab.setTag(0);
+                    Objects.requireNonNull(getSupportActionBar()).setTitle("Locomotion Module");
+                    LocomotionFragment locomotionFragment = new LocomotionFragment(mHead, mBase);
+                    fab.hide();
+                    mVision.bindService(MainActivity.this, mVisionServiceBindListener);
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.frame, locomotionFragment).commit();
+
+                }
             }
         });
-
-        init();
-
+        fab.hide();
         mHead = Head.getInstance();
         mHead.bindService(getApplicationContext(), mHeadServiceBindListener);
         mBase = Base.getInstance();
         mBase.bindService(getApplicationContext(), mBaseServiceBindListener);
-    }
-
-    @Override
-    protected void onRestart() {
-        super.onRestart();
-        init();
-        mTimer = new Timer();
-        mTimerTask = new TimerTask() {
-            @Override
-            public void run() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        // get robot head pitch value, the value is angle between head and base int the pitch direction.
-                        mBasePitchValue.setText(String.format("Base Pitch: %s", floatToString(mHead.getPitchRespectBase().getAngle())));
-                        // get robot head yaw value, the value is angle between head and base int the yaw direction.
-                        mBaseYawValue.setText(String.format("Base Yaw: %s", floatToString(mHead.getYawRespectBase().getAngle())));
-                        // get robot head yaw value, the value is angle between head and world int the yaw direction.
-                        mWorldYawValue.setText(String.format("World Yaw: %s", floatToString(mHead.getWorldYaw().getAngle())));
-                        // get robot head pitch value, the value is angle between head and world int the pitch direction.
-                        mWorldPitchValue.setText(String.format("World Pitch: %s", floatToString(mHead.getWorldPitch().getAngle())));
-                        final AngularVelocity av = mBase.getAngularVelocity();
-                        final LinearVelocity lv = mBase.getLinearVelocity();
-                        mAngularVelocity.setText(String.format("AngularVelocity: %s", av.getSpeed()));
-                        mLinearVelocity.setText(String.format("LinearVelocity: %s", lv.getSpeed()));
-                    }
-                });
-            }
-        };
-        mHead = Head.getInstance();
-        mHead.bindService(this, mHeadServiceBindListener);
-        mBase = Base.getInstance();
-        mBase.bindService(this, mBaseServiceBindListener);
+        mVision = Vision.getInstance();
+        mVision.bindService(this, mVisionServiceBindListener);
+        LocomotionFragment locomotionFragment = new LocomotionFragment(mHead, mBase);
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.frame, locomotionFragment).commit();
+        head_view = findViewById(R.id.head_view_main);
+        head_view.setBackgroundColor(0X000000);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Intent intent = this.getIntent();
-        if (intent.hasExtra("passed_pitch_value_m")) {
-            float passed = Objects.requireNonNull(intent.getExtras()).getFloat("passed_pitch_value_m");
-            mHead.setWorldPitch(passed);
-        }
+        //Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        //startActivityForResult(intent, REQUEST_CAPTURE_IMAGE);
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        mHead = Head.getInstance();
+        mHead.bindService(this, mHeadServiceBindListener);
+        mBase = Base.getInstance();
+        mBase.bindService(this, mBaseServiceBindListener);
+        mVision = Vision.getInstance();
+        mVision.bindService(this, mVisionServiceBindListener);
     }
 
     @Override
@@ -195,103 +147,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onStop();
         mHead.unbindService();
         mBase.unbindService();
-        mTimerTask = null;
-        mTimer.cancel();
-        mTimer = null;
+        mVision.unbindService();
+        finish();
     }
 
     @Override
     protected void onDestroy() {
         mHead.unbindService();
         mBase.unbindService();
-        if (mTimer != null) {
-            mTimer.cancel();
-            mTimer = null;
-        }
-        if (mTimerTask != null) {
-            mTimerTask.cancel();
-            mTimerTask = null;
-        }
+        mVision.unbindService();
         super.onDestroy();
     }
 
-    public void init() {
-        mBaseLeft = findViewById(R.id.left);
-        mBaseRight = findViewById(R.id.right);
-        mHeadUp = findViewById(R.id.up);
-        mHeadDown = findViewById(R.id.down);
-        mAhead = findViewById(R.id.ahead);
-        mResetAll = findViewById(R.id.reset_all);
-
-        mHeadUp.setOnClickListener(this);
-        mHeadDown.setOnClickListener(this);
-        mBaseLeft.setOnClickListener(this);
-        mBaseRight.setOnClickListener(this);
-        mAhead.setOnClickListener(this);
-        mResetAll.setOnClickListener(this);
-
-        mBasePitchValue = findViewById(R.id.base_pitch);
-        mWorldPitchValue = findViewById(R.id.world_pitch);
-        mBaseYawValue = findViewById(R.id.base_yaw);
-        mWorldYawValue = findViewById(R.id.world_yaw);
-        mAngularVelocity = findViewById(R.id.angular_velocity);
-        mLinearVelocity = findViewById(R.id.linear_velocity);
-    }
-
-    public void onClick(View view) {
-        if (!isBindH) {
-            return;
-        }
-        switch (view.getId()) {
-            case R.id.reset_all:
-                mHead.resetOrientation();
-                mBase.setAngularVelocity(0);
-                mBase.setLinearVelocity(0);
-                mHead.setHeadLightMode(0);
-                break;
-            case R.id.left:
-                mBase.cleanOriginalPoint();
-                Pose2D left_pose2D = mBase.getOdometryPose(-1);
-                mBase.setOriginalPoint(left_pose2D);
-                mBase.addCheckPoint(0, 0, (float)(BASE_YAW_ANGLE*Math.PI/180));
-                // To move just the head
-                //float left_value = mHead.getYawRespectBase().getAngle();
-                //left_value += BASE_YAW_ANGLE*Math.PI/180;
-                //mHead.setWorldYaw(left_value);
-                mHead.setHeadLightMode(1);
-                break;
-            case R.id.right:
-                mBase.cleanOriginalPoint();
-                Pose2D right_pose2D = mBase.getOdometryPose(-1);
-                mBase.setOriginalPoint(right_pose2D);
-                mBase.addCheckPoint(0, 0, (float)(-BASE_YAW_ANGLE*Math.PI/180));
-                // To move just the head
-                //float right_value = mHead.getYawRespectBase().getAngle();
-                //right_value -= BASE_YAW_ANGLE*Math.PI/180;
-                //mHead.setWorldYaw(right_value);
-                mHead.setHeadLightMode(2);
-                break;
-            case R.id.up:
-                float up_value = mHead.getWorldPitch().getAngle();
-                up_value += HEAD_PITCH_ANGLE*Math.PI/180;
-                mHead.setWorldPitch(up_value);
-                mHead.setHeadLightMode(3);
-                break;
-            case R.id.down:
-                float down_value = mHead.getWorldPitch().getAngle();
-                down_value -= HEAD_PITCH_ANGLE*Math.PI/180;
-                mHead.setWorldPitch(down_value);
-                mHead.setHeadLightMode(4);
-                break;
-            case R.id.ahead:
-                mBase.cleanOriginalPoint();
-                Pose2D ahead_pose2D = mBase.getOdometryPose(-1);
-                mBase.setOriginalPoint(ahead_pose2D);
-                mBase.addCheckPoint(STEP_SIZE, 0, 0);
-                mHead.setHeadLightMode(5);
-                break;
-            default:
-                break;
+    /*
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CAPTURE_IMAGE | requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                Bitmap bp = (Bitmap) Objects.requireNonNull(data.getExtras()).get("data");
+                head_view.setImageBitmap(bp);
+                Log.d(TAG, "FOUND IMAGE");
+            } else if (resultCode == RESULT_CANCELED) {
+                Log.d(TAG, "Error taking head camera image");
+            }
         }
     }
+    */
 }
