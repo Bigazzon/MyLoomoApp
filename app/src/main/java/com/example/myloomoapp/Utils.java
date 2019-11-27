@@ -10,12 +10,17 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.widget.EditText;
 
+import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Created by rbigazzi on 2019/11/8.
@@ -28,8 +33,12 @@ public class Utils {
     static int BASE_YAW_ANGLE = 10;   //degrees
     static float STEP_SIZE = 0.3f;    //meters
 
-    static final int REQUEST_CAPTURE_IMAGE = 100;
-    static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 1888;
+    //static final int REQUEST_CAPTURE_IMAGE = 100;
+    //static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 1888;
+
+    static String SERVER_IP = "192.168.43.155";
+    static int S_SERVER_PORT = 8888;
+    static int R_SERVER_PORT = 8889;
 
     public static boolean isEditTextEmpty(EditText editText) {
         if (editText == null) {
@@ -60,8 +69,6 @@ public class Utils {
                     fileOutputStream = new FileOutputStream(file);
                     fileOutputStream.write(content.getBytes());
                     fileOutputStream.close();
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -144,8 +151,6 @@ public class Utils {
             fileOutputStream.write(fileByte);
             Log.d(TAG, "onBufferMessageReceived: file successfully");
             fileOutputStream.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }

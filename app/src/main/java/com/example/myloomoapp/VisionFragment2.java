@@ -3,6 +3,8 @@ package com.example.myloomoapp;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -12,6 +14,7 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.Image;
 import android.media.ImageReader;
 import android.os.Build;
 import android.os.Bundle;
@@ -32,6 +35,11 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.Objects;
 
@@ -87,8 +95,9 @@ public class VisionFragment2 extends Fragment {
 
     private void updateTextureViewScaling(int viewHeight) {
         FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) mHeadImageView.getLayoutParams();
+        int image_height = viewHeight * 4 / 3;
         params.width = viewHeight;
-        params.height = viewHeight*4/3;
+        params.height = image_height;
         params.gravity= Gravity.CENTER;
         Log.d(TAG, (params.width)+"x"+(params.height));
         mHeadImageView.setLayoutParams(params);
@@ -183,6 +192,7 @@ public class VisionFragment2 extends Fragment {
         }
         @Override
         public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+            Log.d(TAG, "Surface Updated");
         }
     };
     private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
@@ -271,7 +281,7 @@ public class VisionFragment2 extends Fragment {
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
-        Log.e(TAG, "openCamera " + mCameraId);
+        Log.e(TAG, "ID Opened Camera: " + mCameraId);
     }
 
     @Override
@@ -309,4 +319,6 @@ public class VisionFragment2 extends Fragment {
             imageReader = null;
         }
     }
+
+
 }
