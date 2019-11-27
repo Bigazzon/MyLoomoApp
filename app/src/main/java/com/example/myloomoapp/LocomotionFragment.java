@@ -110,6 +110,7 @@ public class LocomotionFragment extends Fragment implements View.OnClickListener
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.left:
+                Log.d(TAG, "ROTATING LEFT");
                 fBase.cleanOriginalPoint();
                 Pose2D left_pose2D = fBase.getOdometryPose(-1);
                 fBase.setOriginalPoint(left_pose2D);
@@ -121,6 +122,7 @@ public class LocomotionFragment extends Fragment implements View.OnClickListener
                 fHead.setHeadLightMode(7);
                 break;
             case R.id.right:
+                Log.d(TAG, "ROTATING RIGHT");
                 fBase.cleanOriginalPoint();
                 Pose2D right_pose2D = fBase.getOdometryPose(-1);
                 fBase.setOriginalPoint(right_pose2D);
@@ -132,18 +134,21 @@ public class LocomotionFragment extends Fragment implements View.OnClickListener
                 fHead.setHeadLightMode(7);
                 break;
             case R.id.up:
+                Log.d(TAG, "HEAD UP");
                 float up_value = fHead.getWorldPitch().getAngle();
                 up_value += HEAD_PITCH_ANGLE*Math.PI/180;
                 fHead.setWorldPitch(up_value);
                 fHead.setHeadLightMode(8);
                 break;
             case R.id.down:
+                Log.d(TAG, "HEAD DOWN");
                 float down_value = fHead.getWorldPitch().getAngle();
                 down_value -= HEAD_PITCH_ANGLE*Math.PI/180;
                 fHead.setWorldPitch(down_value);
                 fHead.setHeadLightMode(8);
                 break;
             case R.id.ahead:
+                Log.d(TAG, "MOVING AHEAD");
                 fBase.cleanOriginalPoint();
                 Pose2D ahead_pose2D = fBase.getOdometryPose(-1);
                 fBase.setOriginalPoint(ahead_pose2D);
@@ -151,7 +156,7 @@ public class LocomotionFragment extends Fragment implements View.OnClickListener
                 fHead.setHeadLightMode(5);
                 break;
             case R.id.reset_all:
-                Log.d(TAG, "RESET");
+                Log.d(TAG, "HEAD RESET");
                 fHead.resetOrientation();
                 fBase.setAngularVelocity(0);
                 fBase.setLinearVelocity(0);

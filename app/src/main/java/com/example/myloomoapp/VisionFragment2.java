@@ -192,7 +192,7 @@ public class VisionFragment2 extends Fragment {
         }
         @Override
         public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-            Log.d(TAG, "Surface Updated");
+            //Log.d(TAG, "Surface Updated");
         }
     };
     private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {

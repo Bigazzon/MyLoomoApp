@@ -102,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 if((Integer)fab.getTag()==0) {
                     fab.setTag(1);
-                    Objects.requireNonNull(getSupportActionBar()).setTitle("Vision Module (RGB and Depth)");
+                    Objects.requireNonNull(getSupportActionBar()).setTitle("Vision Module (RGB, Depth and Fisheye)");
                     VisionFragment1 visionFragment1 = new VisionFragment1(mVision);
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.frame, visionFragment1).commit();
@@ -110,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
                 else if((Integer)fab.getTag()==1) {
                     fab.setTag(2);
                     mVision.unbindService();
-                    Objects.requireNonNull(getSupportActionBar()).setTitle("Vision Module (Fisheye and Head)");
+                    Objects.requireNonNull(getSupportActionBar()).setTitle("Vision Module (Head)");
                     VisionFragment2 visionFragment2 = new VisionFragment2();
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.frame, visionFragment2).commit();
@@ -185,6 +185,7 @@ public class MainActivity extends AppCompatActivity {
     public void movement(int type) {
         switch (type) {
             case 1:
+                Log.d(TAG, "ROTATION LEFT");
                 mBase.cleanOriginalPoint();
                 Pose2D left_pose2D = mBase.getOdometryPose(-1);
                 mBase.setOriginalPoint(left_pose2D);
@@ -196,6 +197,7 @@ public class MainActivity extends AppCompatActivity {
                 mHead.setHeadLightMode(7);
                 break;
             case 2:
+                Log.d(TAG, "ROTATING RIGHT");
                 mBase.cleanOriginalPoint();
                 Pose2D right_pose2D = mBase.getOdometryPose(-1);
                 mBase.setOriginalPoint(right_pose2D);
@@ -207,18 +209,21 @@ public class MainActivity extends AppCompatActivity {
                 mHead.setHeadLightMode(7);
                 break;
             case 3:
+                Log.d(TAG, "HEAD UP");
                 float up_value = mHead.getWorldPitch().getAngle();
                 up_value += HEAD_PITCH_ANGLE * Math.PI / 180;
                 mHead.setWorldPitch(up_value);
                 mHead.setHeadLightMode(8);
                 break;
             case 4:
+                Log.d(TAG, "HEAD DOWN");
                 float down_value = mHead.getWorldPitch().getAngle();
                 down_value -= HEAD_PITCH_ANGLE * Math.PI / 180;
                 mHead.setWorldPitch(down_value);
                 mHead.setHeadLightMode(8);
                 break;
             case 5:
+                Log.d(TAG, "MOVING AHEAD");
                 mBase.cleanOriginalPoint();
                 Pose2D ahead_pose2D = mBase.getOdometryPose(-1);
                 mBase.setOriginalPoint(ahead_pose2D);
@@ -226,7 +231,7 @@ public class MainActivity extends AppCompatActivity {
                 mHead.setHeadLightMode(5);
                 break;
             case 6:
-                Log.d(TAG, "RESET");
+                Log.d(TAG, "HEAD RESET");
                 mHead.resetOrientation();
                 mBase.setAngularVelocity(0);
                 mBase.setLinearVelocity(0);
