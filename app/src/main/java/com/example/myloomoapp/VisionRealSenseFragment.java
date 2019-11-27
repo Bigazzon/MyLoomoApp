@@ -21,9 +21,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Objects;
 
-public class VisionFragment1 extends Fragment {
+public class VisionRealSenseFragment extends Fragment {
 
-    private static final String TAG = "VisionFragment1";
+    private static final String TAG = "VisionRealSenseFragment";
 
     private Vision fVision;
 
@@ -39,7 +39,7 @@ public class VisionFragment1 extends Fragment {
     //private SurfaceView mColorSurfaceView;
     //private SurfaceView mDepthSurfaceView;
 
-    VisionFragment1(Vision vision) {
+    VisionRealSenseFragment(Vision vision) {
         fVision = vision;
     }
 

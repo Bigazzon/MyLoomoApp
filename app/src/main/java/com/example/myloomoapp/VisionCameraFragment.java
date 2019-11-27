@@ -43,9 +43,9 @@ import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.Objects;
 
-public class VisionFragment2 extends Fragment {
+public class VisionCameraFragment extends Fragment {
 
-    private static final String TAG = "VisionFragment2";
+    private static final String TAG = "VisionCameraFragment";
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 100;
 
     private View view;
@@ -78,7 +78,7 @@ public class VisionFragment2 extends Fragment {
     private Size imageDimension;
     private ImageReader imageReader;
 
-    VisionFragment2() {
+    VisionCameraFragment() {
     }
 
     @Override
@@ -195,6 +195,7 @@ public class VisionFragment2 extends Fragment {
             //Log.d(TAG, "Surface Updated");
         }
     };
+
     private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(@NonNull CameraDevice camera) {

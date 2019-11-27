@@ -1,6 +1,15 @@
 package com.example.myloomoapp;
 
+import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.graphics.SurfaceTexture;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.params.StreamConfigurationMap;
+import android.os.Build;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -83,10 +92,12 @@ public class MainActivity extends AppCompatActivity {
         public void onBind() {
             isBindV = true;
             //fab.show();
-            Objects.requireNonNull(getSupportActionBar()).setTitle("Vision Module (RGB, Depth and Fisheye)");
-            VisionFragment1 visionFragment1 = new VisionFragment1(mVision);
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.frame, visionFragment1).commit();
+            if((Integer)fab.getTag() == 2) {
+                Objects.requireNonNull(getSupportActionBar()).setTitle("Vision Module (RGB, Depth and Fisheye)");
+                VisionRealSenseFragment visionRealSenseFragment = new VisionRealSenseFragment(mVision);
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.frame, visionRealSenseFragment).commit();
+            }
         }
         @Override
         public void onUnbind(String reason) {
@@ -111,15 +122,14 @@ public class MainActivity extends AppCompatActivity {
                 if((Integer)fab.getTag()==0) {
                     fab.setTag(1);
                     Objects.requireNonNull(getSupportActionBar()).setTitle("Vision Module (Head)");
-                    VisionFragment2 visionFragment2 = new VisionFragment2();
+                    VisionCameraFragment visionCameraFragment = new VisionCameraFragment();
                     getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.frame, visionFragment2).commit();
+                            .replace(R.id.frame, visionCameraFragment).commit();
                 }
                 else if((Integer)fab.getTag()==1) {
                     fab.setTag(2);
                     mVision.bindService(getApplicationContext(), mVisionServiceBindListener);
-                    Snackbar.make(view, "Waiting for Real Sense Camera...", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
+                    Snackbar.make(view, "Waiting for Real Sense Camera...", Snackbar.LENGTH_LONG).show();
                 }
                 else {
                     fab.setTag(0);
@@ -139,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
         mBase = Base.getInstance();
         mBase.bindService(getApplicationContext(), mBaseServiceBindListener);
         mVision = Vision.getInstance();
-        mVision.bindService(this, mVisionServiceBindListener);
+        //mVision.bindService(this, mVisionServiceBindListener);
         LocomotionFragment locomotionFragment = new LocomotionFragment(mHead, mBase);
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.frame, locomotionFragment).commit();
@@ -247,6 +257,32 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
     }
+
+    /*
+    private void openCamera() {
+        CameraManager manager = (CameraManager) Objects.requireNonNull(getActivity()).getSystemService(Context.CAMERA_SERVICE);
+        Log.e(TAG, "is camera open");
+        try {
+            assert manager != null;
+            mCameraId = manager.getCameraIdList()[0];
+            Log.d(TAG, manager.getCameraIdList()[0] + manager.getCameraIdList()[1]);
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(mCameraId);
+            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            assert map != null;
+            imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
+            // Add permission for camera and let user grant the permission
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(new String[] {Manifest.permission.CAMERA}, 1);
+                }
+            }
+            manager.openCamera(mCameraId, stateCallback, null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        Log.e(TAG, "ID Opened Camera: " + mCameraId);
+    }
+    */
 
     /*
     @Override
