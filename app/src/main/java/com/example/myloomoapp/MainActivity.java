@@ -1,5 +1,6 @@
 package com.example.myloomoapp;
 
+import android.app.ProgressDialog;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -12,6 +13,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.segway.robot.algo.Pose2D;
 import com.segway.robot.sdk.base.bind.ServiceBinder;
 import com.segway.robot.sdk.locomotion.head.Head;
@@ -38,8 +40,10 @@ public class MainActivity extends AppCompatActivity {
     Base mBase;
     Vision mVision;
 
+
     private Socket socket;
     PrintWriter printWriter;
+    ProgressDialog dialog;
 
     TextView textStatus;
 
@@ -49,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
 
     boolean isBindH = false;
     boolean isBindB = false;
-    boolean isBindV = false;
+    volatile boolean isBindV = false;
 
     Thread send_thread;
     Thread receive_thread;
@@ -78,7 +82,11 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onBind() {
             isBindV = true;
-            fab.show();
+            //fab.show();
+            Objects.requireNonNull(getSupportActionBar()).setTitle("Vision Module (RGB, Depth and Fisheye)");
+            VisionFragment1 visionFragment1 = new VisionFragment1(mVision);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.frame, visionFragment1).commit();
         }
         @Override
         public void onUnbind(String reason) {
@@ -102,32 +110,30 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 if((Integer)fab.getTag()==0) {
                     fab.setTag(1);
-                    Objects.requireNonNull(getSupportActionBar()).setTitle("Vision Module (RGB, Depth and Fisheye)");
-                    VisionFragment1 visionFragment1 = new VisionFragment1(mVision);
-                    getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.frame, visionFragment1).commit();
-                }
-                else if((Integer)fab.getTag()==1) {
-                    fab.setTag(2);
-                    mVision.unbindService();
                     Objects.requireNonNull(getSupportActionBar()).setTitle("Vision Module (Head)");
                     VisionFragment2 visionFragment2 = new VisionFragment2();
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.frame, visionFragment2).commit();
                 }
+                else if((Integer)fab.getTag()==1) {
+                    fab.setTag(2);
+                    mVision.bindService(getApplicationContext(), mVisionServiceBindListener);
+                    Snackbar.make(view, "Waiting for Real Sense Camera...", Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+                }
                 else {
                     fab.setTag(0);
+                    mVision.unbindService();
                     Objects.requireNonNull(getSupportActionBar()).setTitle("Locomotion Module");
                     LocomotionFragment locomotionFragment = new LocomotionFragment(mHead, mBase);
-                    fab.hide();
-                    mVision.bindService(MainActivity.this, mVisionServiceBindListener);
+                    //mVision.bindService(MainActivity.this, mVisionServiceBindListener);
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.frame, locomotionFragment).commit();
 
                 }
             }
         });
-        fab.hide();
+        //fab.hide();
         mHead = Head.getInstance();
         mHead.bindService(getApplicationContext(), mHeadServiceBindListener);
         mBase = Base.getInstance();
