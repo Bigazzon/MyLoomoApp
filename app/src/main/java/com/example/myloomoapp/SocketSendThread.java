@@ -6,19 +6,13 @@ import android.os.Environment;
 import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.Socket;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import static com.example.myloomoapp.Utils.MAGALLI;
-import static com.example.myloomoapp.Utils.SERVER_IP;
-import static com.example.myloomoapp.Utils.S_SERVER_PORT;
 
 public class SocketSendThread implements Runnable {
 
@@ -47,8 +41,13 @@ public class SocketSendThread implements Runnable {
                 mActivity.send_captured(img_bytes);
             }
             else {
-                Log.d(TAG, "Taking picture and sending it");
-                img_bytes = mActivity.takePicture();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d(TAG, "Taking picture and sending it");
+                        mActivity.takePicture();
+                    }
+                }).start();
             }
         }
     };
@@ -59,7 +58,7 @@ public class SocketSendThread implements Runnable {
 
     @Override
     public void run() {
-        timerObj.schedule(timerTaskObj, 5000, 2000);
+        timerObj.schedule(timerTaskObj, 5000, 400);
     }
 
     private byte[] getBytesfromBitmap(Bitmap bitmap){

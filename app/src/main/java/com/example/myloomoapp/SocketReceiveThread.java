@@ -33,8 +33,13 @@ public class SocketReceiveThread implements Runnable {
                         int msg = in.read();
                         msg -= 48;
                         System.out.println(msg);
-
-                        mActivity.movement(msg);
+                        final int finalMsg = msg;
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mActivity.movement(finalMsg);
+                            }
+                        }).start();
                     }
                 } catch (EOFException e) {
                     e.printStackTrace();

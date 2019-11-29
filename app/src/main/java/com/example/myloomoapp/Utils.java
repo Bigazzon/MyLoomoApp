@@ -1,26 +1,16 @@
 package com.example.myloomoapp;
 
-import android.content.Context;
-import android.graphics.Bitmap;
 import android.hardware.Camera;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.EditText;
 
-import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.net.Socket;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Created by rbigazzi on 2019/11/8.
@@ -31,10 +21,7 @@ public class Utils {
 
     static int HEAD_PITCH_ANGLE = 15; //degrees
     static int BASE_YAW_ANGLE = 10;   //degrees
-    static float STEP_SIZE = 0.3f;    //meters
-
-    //static final int REQUEST_CAPTURE_IMAGE = 100;
-    //static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 1888;
+    static float STEP_SIZE = 0.5f;    //meters
 
     static String SERVER_IP = "192.168.43.155";
     static int S_SERVER_PORT = 8888;
