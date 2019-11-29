@@ -45,10 +45,12 @@ import com.segway.robot.sdk.base.bind.ServiceBinder;
 import com.segway.robot.sdk.locomotion.head.Head;
 import com.segway.robot.sdk.locomotion.sbv.Base;
 import com.segway.robot.sdk.vision.Vision;
+import com.segway.robot.sdk.voice.Speaker;
+import com.segway.robot.sdk.voice.VoiceException;
+import com.segway.robot.sdk.voice.tts.TtsListener;
 
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -76,8 +78,10 @@ public class MainActivity extends AppCompatActivity {
 
     Head mHead;
     Base mBase;
+    Speaker mSpeech;
     Vision mVision;
 
+    TtsListener mTtsListener;
 
     private Socket socket;
     PrintWriter printWriter;
@@ -91,7 +95,8 @@ public class MainActivity extends AppCompatActivity {
 
     boolean isBindH = false;
     boolean isBindB = false;
-    volatile boolean isBindV = false;
+    boolean isBindS = false;
+    boolean isBindV = false;
 
     Thread send_thread;
     Thread receive_thread;
@@ -123,6 +128,16 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onUnbind(String reason) {
             isBindB = false;
+        }
+    };
+    private ServiceBinder.BindStateListener mSpeechServiceBindListener = new ServiceBinder.BindStateListener() {
+        @Override
+        public void onBind() {
+            isBindS = true;
+        }
+        @Override
+        public void onUnbind(String reason) {
+            isBindS = false;
         }
     };
     private ServiceBinder.BindStateListener mVisionServiceBindListener = new ServiceBinder.BindStateListener() {
@@ -158,6 +173,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if((Integer)fab.getTag()==0) {
+                    closeCamera();
                     fab.setTag(1);
                     Objects.requireNonNull(getSupportActionBar()).setTitle("Vision Module (Head)");
                     VisionCameraFragment visionCameraFragment = new VisionCameraFragment();
@@ -172,6 +188,7 @@ public class MainActivity extends AppCompatActivity {
                 else {
                     fab.setTag(0);
                     mVision.unbindService();
+                    openCamera();
                     Objects.requireNonNull(getSupportActionBar()).setTitle("Locomotion Module");
                     LocomotionFragment locomotionFragment = new LocomotionFragment(mHead, mBase);
                     //mVision.bindService(MainActivity.this, mVisionServiceBindListener);
@@ -186,6 +203,8 @@ public class MainActivity extends AppCompatActivity {
         mHead.bindService(getApplicationContext(), mHeadServiceBindListener);
         mBase = Base.getInstance();
         mBase.bindService(getApplicationContext(), mBaseServiceBindListener);
+        mSpeech = Speaker.getInstance();
+        mSpeech.bindService(getApplicationContext(), mSpeechServiceBindListener);
         mVision = Vision.getInstance();
         //mVision.bindService(this, mVisionServiceBindListener);
         LocomotionFragment locomotionFragment = new LocomotionFragment(mHead, mBase);
@@ -193,6 +212,25 @@ public class MainActivity extends AppCompatActivity {
                 .replace(R.id.frame, locomotionFragment).commit();
         head_view = findViewById(R.id.head_view_main);
         head_view.setBackgroundColor(0X000000);
+        mTtsListener = new TtsListener() {
+            @Override
+            public void onSpeechStarted(String s) {
+                //s is speech content, callback this method when speech is starting.
+                Log.d(TAG, "onSpeechStarted() called with: s = [" + s + "]");
+            }
+
+            @Override
+            public void onSpeechFinished(String s) {
+                //s is speech content, callback this method when speech is finish.
+                Log.d(TAG, "onSpeechFinished() called with: s = [" + s + "]");
+            }
+
+            @Override
+            public void onSpeechError(String s, String s1) {
+                //s is speech content, callback this method when speech occurs error.
+                Log.d(TAG, "onSpeechError() called with: s = [" + s + "], s1 = [" + s1 + "]");
+            }
+        };
     }
 
     @Override
@@ -221,6 +259,8 @@ public class MainActivity extends AppCompatActivity {
         mHead.bindService(this, mHeadServiceBindListener);
         mBase = Base.getInstance();
         mBase.bindService(this, mBaseServiceBindListener);
+        mSpeech = Speaker.getInstance();
+        mSpeech.bindService(this, mSpeechServiceBindListener);
         mVision = Vision.getInstance();
         mVision.bindService(this, mVisionServiceBindListener);
     }
@@ -230,6 +270,7 @@ public class MainActivity extends AppCompatActivity {
         super.onStop();
         mHead.unbindService();
         mBase.unbindService();
+        mSpeech.unbindService();
         mVision.unbindService();
         send_thread.interrupt();
         receive_thread.interrupt();
@@ -240,11 +281,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         mHead.unbindService();
         mBase.unbindService();
+        mSpeech.unbindService();
         mVision.unbindService();
         super.onDestroy();
     }
 
-    public void movement(int type) {
+    public void command(int type) throws VoiceException {
         switch (type) {
             case 1:
                 Log.d(TAG, "ROTATION LEFT");
@@ -298,6 +340,13 @@ public class MainActivity extends AppCompatActivity {
                 mBase.setAngularVelocity(0);
                 mBase.setLinearVelocity(0);
                 mHead.setHeadLightMode(0);
+                break;
+            case 7:
+                Log.d(TAG, "SPEECH");
+                mSpeech.setVolume(50);
+                mSpeech.speak("CHAW", mTtsListener);
+                mSpeech.waitForSpeakFinish(10000);
+                mHead.setHeadLightMode(1);
                 break;
             default:
                 break;
@@ -483,10 +532,10 @@ public class MainActivity extends AppCompatActivity {
                     try (Image image = reader.acquireLatestImage()) {
                         ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                         img_bytes = new byte[buffer.capacity()];
-                        Log.d(TAG, "Bytes length:" + img_bytes.length);
+                        //Log.d(TAG, "Bytes length: " + img_bytes.length);
                         buffer.get(img_bytes);
                         save(img_bytes);
-                        Log.d(TAG, "Saving picture");
+                        //Log.d(TAG, "Saving picture");
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
@@ -525,7 +574,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onConfigureFailed(CameraCaptureSession session) {
                 }
             }, mBackgroundHandler);
-        } catch (CameraAccessException e) {
+        } catch (CameraAccessException | IllegalStateException e) {
             e.printStackTrace();
         }
         return ret_bytes;
@@ -544,7 +593,7 @@ public class MainActivity extends AppCompatActivity {
                 out.writeInt(received_img.length);
                 out.write(received_img);
                 out.flush();
-                Log.d(TAG, "Sending picture");
+                Log.d(TAG, "Sending picture of " + received_img.length + " bytes");
             }
             socket.close();
             //Log.d(TAG, "IMAGE SENT");

@@ -42,7 +42,7 @@ def start():
              "6) Reset Head")
       while 1:
           num = -1
-          while(num<1 or num>6):
+          while(num<1 or num>7):
               num = int(input("Select your action: "))
               if num == 0:
                   print ("Available actions:\n" + \
@@ -52,7 +52,7 @@ def start():
                          "4) Head Down\n" + \
                          "5) Move Ahead\n" + \
                          "6) Reset Head")
-          if not (num<1 or num>6):
+          if not (num<1 or num>7):
               msg = str(num)
               #print(msg + " sending")
               conn.send(msg.encode('utf-8'))

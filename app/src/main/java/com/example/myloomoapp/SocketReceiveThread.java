@@ -1,5 +1,7 @@
 package com.example.myloomoapp;
 
+import com.segway.robot.sdk.voice.VoiceException;
+
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.IOException;
@@ -37,7 +39,11 @@ public class SocketReceiveThread implements Runnable {
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
-                                mActivity.movement(finalMsg);
+                                try {
+                                    mActivity.command(finalMsg);
+                                } catch (VoiceException e) {
+                                    e.printStackTrace();
+                                }
                             }
                         }).start();
                     }

@@ -44,7 +44,7 @@ public class SocketSendThread implements Runnable {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        Log.d(TAG, "Taking picture and sending it");
+                        //Log.d(TAG, "Taking picture and sending it");
                         mActivity.takePicture();
                     }
                 }).start();
