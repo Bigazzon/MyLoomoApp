@@ -132,43 +132,6 @@ public class VisionCameraFragment extends Fragment {
         return view;
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        //start();
-
-        //mTimer.schedule(mTimerTask, 50, 15);
-
-        //Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        //startActivityForResult(intent, REQUEST_CAPTURE_IMAGE);
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        //stop();
-        /*
-        mTimerTask = null;
-        mTimer.cancel();
-        mTimer = null;
-         */
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        /*
-        if (mTimer != null) {
-            mTimer.cancel();
-            mTimer = null;
-        }
-        if (mTimerTask != null) {
-            mTimerTask.cancel();
-            mTimerTask = null;
-        }
-         */
-    }
-
     private void init(){
         mHeadImageView = view.findViewById(R.id.head_view_main);
         mHeadImageView.setSurfaceTextureListener(textureListener);
@@ -193,26 +156,6 @@ public class VisionCameraFragment extends Fragment {
         @Override
         public void onSurfaceTextureUpdated(SurfaceTexture surface) {
             //Log.d(TAG, "Surface Updated");
-        }
-    };
-
-    private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
-        @Override
-        public void onOpened(@NonNull CameraDevice camera) {
-            //This is called when the camera is open
-            Log.e(TAG, "onOpened");
-            mCameraDevice = camera;
-            createCameraPreview();
-            updateTextureViewScaling(frame.getHeight());
-        }
-        @Override
-        public void onDisconnected(@NonNull CameraDevice camera) {
-            mCameraDevice.close();
-        }
-        @Override
-        public void onError(@NonNull CameraDevice camera, int error) {
-            mCameraDevice.close();
-            mCameraDevice = null;
         }
     };
 
@@ -285,18 +228,25 @@ public class VisionCameraFragment extends Fragment {
         Log.e(TAG, "ID Opened Camera: " + mCameraId);
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {// If request is cancelled, the result arrays are empty.
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                //Start your camera handling here
-                Log.d(TAG, "Camera Handling");
-            } else {
-                //AppUtils.showUserMessage("You declined to allow the app to access your camera", this);
-                Log.d(TAG, "Access not allowed to camera");
-            }
+    private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
+        @Override
+        public void onOpened(@NonNull CameraDevice camera) {
+            //This is called when the camera is open
+            Log.e(TAG, "onOpened");
+            mCameraDevice = camera;
+            createCameraPreview();
+            updateTextureViewScaling(frame.getHeight());
         }
-    }
+        @Override
+        public void onDisconnected(@NonNull CameraDevice camera) {
+            mCameraDevice.close();
+        }
+        @Override
+        public void onError(@NonNull CameraDevice camera, int error) {
+            mCameraDevice.close();
+            mCameraDevice = null;
+        }
+    };
 
     private void updatePreview() {
         if(null == mCameraDevice) {
@@ -321,5 +271,17 @@ public class VisionCameraFragment extends Fragment {
         }
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {// If request is cancelled, the result arrays are empty.
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                //Start your camera handling here
+                Log.d(TAG, "Camera Handling");
+            } else {
+                //AppUtils.showUserMessage("You declined to allow the app to access your camera", this);
+                Log.d(TAG, "Access not allowed to camera");
+            }
+        }
+    }
 
 }

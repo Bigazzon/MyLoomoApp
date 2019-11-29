@@ -40,6 +40,8 @@ public class Utils {
     static int S_SERVER_PORT = 8888;
     static int R_SERVER_PORT = 8889;
 
+    static boolean MAGALLI = false;
+
     public static boolean isEditTextEmpty(EditText editText) {
         if (editText == null) {
             return false;

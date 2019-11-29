@@ -33,6 +33,7 @@ public class SocketReceiveThread implements Runnable {
                         int msg = in.read();
                         msg -= 48;
                         System.out.println(msg);
+
                         mActivity.movement(msg);
                     }
                 } catch (EOFException e) {
