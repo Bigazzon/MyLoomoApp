@@ -491,13 +491,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    byte[] ret_bytes = null;
-
-    protected byte[] takePicture() {
+    protected void takePicture() {
         img_bytes = null;
         if(null == mCameraDevice) {
             Log.e(TAG, "cameraDevice is null");
-            return null;
+            return;
         }
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
@@ -534,7 +532,7 @@ public class MainActivity extends AppCompatActivity {
                         img_bytes = new byte[buffer.capacity()];
                         //Log.d(TAG, "Bytes length: " + img_bytes.length);
                         buffer.get(img_bytes);
-                        save(img_bytes);
+                        //save(img_bytes);
                         //Log.d(TAG, "Saving picture");
                         new Thread(new Runnable() {
                             @Override
@@ -542,7 +540,7 @@ public class MainActivity extends AppCompatActivity {
                                 send_captured(img_bytes);
                             }
                         }).start();
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
@@ -577,7 +575,6 @@ public class MainActivity extends AppCompatActivity {
         } catch (CameraAccessException | IllegalStateException e) {
             e.printStackTrace();
         }
-        return ret_bytes;
     }
 
     void send_captured(byte[] received_img){
@@ -598,8 +595,9 @@ public class MainActivity extends AppCompatActivity {
             socket.close();
             //Log.d(TAG, "IMAGE SENT");
 
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            //e.printStackTrace();
+            System.out.println("Server side receiving thread is not responding");
         }
     }
 
