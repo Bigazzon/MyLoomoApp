@@ -1,4 +1,4 @@
-# MyLoomoApp
+# My Loomo App
 
 ### Loomo Application for remote control
 
