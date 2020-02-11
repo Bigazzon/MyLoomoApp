@@ -88,7 +88,7 @@
         app:layout_constraintTop_toBottomOf="@+id/yaw" />
 
     <TextView
-        android:id="@+id/world_yaw"
+        android:id="@+id/wb_yaw"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:textAlignment="center"
@@ -97,7 +97,7 @@
         app:layout_constraintTop_toBottomOf="@+id/right" />
 
     <TextView
-        android:id="@+id/base_yaw"
+        android:id="@+id/odometry"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:textAlignment="center"
@@ -135,7 +135,7 @@
         app:layout_constraintGuide_begin="260dp" />
 
     <TextView
-        android:id="@+id/linear_velocity"
+        android:id="@+id/velocity"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:textAlignment="center"
@@ -144,7 +144,7 @@
         app:layout_constraintTop_toBottomOf="@+id/ahead" />
 
     <TextView
-        android:id="@+id/angular_velocity"
+        android:id="@+id/blank"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:textAlignment="center"

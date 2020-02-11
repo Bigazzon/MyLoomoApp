@@ -2,14 +2,13 @@ package com.example.myloomoapp;
 
 import android.graphics.Bitmap;
 import android.os.Bundle;
-
-import androidx.fragment.app.Fragment;
-
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+
+import androidx.fragment.app.Fragment;
 
 import com.segway.robot.sdk.vision.Vision;
 import com.segway.robot.sdk.vision.frame.Frame;
@@ -24,44 +23,84 @@ import java.util.Objects;
 public class VisionRealSenseFragment extends Fragment {
 
     private static final String TAG = "VisionRealSenseFragment";
-
+    private static final int TIME_PERIOD = 5 * 1000;
     private Vision fVision;
-
     private View view;
-
     private StreamInfo mColorInfo;
     private StreamInfo mDepthInfo;
     private StreamInfo mFishInfo;
     private ImageView mColorImageView;
     private ImageView mDepthImageView;
-    private ImageView mFishImageView;
 
     //private SurfaceView mColorSurfaceView;
     //private SurfaceView mDepthSurfaceView;
+    private ImageView mFishImageView;
+    private long startTimeColor = System.currentTimeMillis();
+    private IImageState mIImageState = new IImageState() {
 
-    VisionRealSenseFragment(Vision vision) {
-        fVision = vision;
-    }
+        Runnable mRunnable;
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        view = inflater.inflate(R.layout.vision_fragment1, container, false);
-        init();
-        return view;
-    }
+        @Override
+        public void updateImage(int type, final Bitmap bitmap) {
+            switch (type) {
+                case StreamType.COLOR:
+                    mRunnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            mColorImageView.setImageBitmap(bitmap);
+                        }
+                    };
+                    //saveColorToFile(bitmap);
+                    break;
+                case StreamType.DEPTH:
+                    mRunnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            mDepthImageView.setImageBitmap(bitmap);
+                        }
+                    };
+                    //saveDepthToFile(bitmap);
+                    break;
+                case StreamType.FISH_EYE:
+                    mRunnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            mFishImageView.setImageBitmap(bitmap);
+                        }
+                    };
+                    break;
+            }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        start();
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        stop();
-    }
+            if (mRunnable != null) {
+                Objects.requireNonNull(getActivity()).runOnUiThread(mRunnable);
+            }
+        }
+    };
+    private Vision.FrameListener mFrameListener = new Vision.FrameListener() {
+        @Override
+        public void onNewFrame(int streamType, Frame frame) {
+            Bitmap mColorBitmap = Bitmap.createBitmap(mColorInfo.getWidth(), mColorInfo.getHeight(), Bitmap.Config.ARGB_8888);
+            Bitmap mDepthBitmap = Bitmap.createBitmap(mDepthInfo.getWidth(), mDepthInfo.getHeight(), Bitmap.Config.RGB_565);
+            Bitmap mFisheyeBitmap = Bitmap.createBitmap(mFishInfo.getWidth(), mFishInfo.getHeight(), Bitmap.Config.ALPHA_8);
+            switch (streamType) {
+                case StreamType.COLOR:
+                    // draw color image to bitmap and display
+                    mColorBitmap.copyPixelsFromBuffer(frame.getByteBuffer());
+                    mIImageState.updateImage(StreamType.COLOR, mColorBitmap);
+                    break;
+                case StreamType.DEPTH:
+                    // draw depth image to bitmap and display
+                    mDepthBitmap.copyPixelsFromBuffer(frame.getByteBuffer());
+                    mIImageState.updateImage(StreamType.DEPTH, mDepthBitmap);
+                    break;
+                case StreamType.FISH_EYE:
+                    // draw fisheye image to bitmap and display
+                    mFisheyeBitmap.copyPixelsFromBuffer(frame.getByteBuffer());
+                    mIImageState.updateImage(StreamType.FISH_EYE, mFisheyeBitmap);
+                    break;
+            }
+        }
+    };
 
     /*
     public synchronized void start() {
@@ -118,8 +157,34 @@ public class VisionRealSenseFragment extends Fragment {
         }
     }
     */
+    private long startTimeDepth = System.currentTimeMillis();
 
-    private void init(){
+
+    VisionRealSenseFragment(Vision vision) {
+        fVision = vision;
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        view = inflater.inflate(R.layout.vision_fragment1, container, false);
+        init();
+        return view;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        start();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        stop();
+    }
+
+    private void init() {
         mColorImageView = view.findViewById(R.id.color_view);
         mDepthImageView = view.findViewById(R.id.depth_view);
         mFishImageView = view.findViewById(R.id.fish_view);
@@ -128,7 +193,6 @@ public class VisionRealSenseFragment extends Fragment {
         //mDepthSurfaceView = view.findViewById(R.id.depth_view);
         //mDepthSurfaceView.setBackgroundColor(0XFFFFFFFF);
     }
-
 
     private synchronized void start() {
         Log.d(TAG, "start() called");
@@ -158,33 +222,6 @@ public class VisionRealSenseFragment extends Fragment {
         fVision.stopListenFrame(StreamType.FISH_EYE);
     }
 
-    private Vision.FrameListener mFrameListener = new Vision.FrameListener() {
-        @Override
-        public void onNewFrame(int streamType, Frame frame) {
-            Bitmap mColorBitmap = Bitmap.createBitmap(mColorInfo.getWidth(), mColorInfo.getHeight(), Bitmap.Config.ARGB_8888);
-            Bitmap mDepthBitmap = Bitmap.createBitmap(mDepthInfo.getWidth(), mDepthInfo.getHeight(), Bitmap.Config.RGB_565);
-            Bitmap mFisheyeBitmap = Bitmap.createBitmap(mFishInfo.getWidth(), mFishInfo.getHeight(), Bitmap.Config.ALPHA_8);
-            switch (streamType) {
-                case StreamType.COLOR:
-                    // draw color image to bitmap and display
-                    mColorBitmap.copyPixelsFromBuffer(frame.getByteBuffer());
-                    mIImageState.updateImage(StreamType.COLOR, mColorBitmap);
-                    break;
-                case StreamType.DEPTH:
-                    // draw depth image to bitmap and display
-                    mDepthBitmap.copyPixelsFromBuffer(frame.getByteBuffer());
-                    mIImageState.updateImage(StreamType.DEPTH, mDepthBitmap);
-                    break;
-                case StreamType.FISH_EYE:
-                    // draw fisheye image to bitmap and display
-                    mFisheyeBitmap.copyPixelsFromBuffer(frame.getByteBuffer());
-                    mIImageState.updateImage(StreamType.FISH_EYE, mFisheyeBitmap);
-                    break;            }
-        }
-    };
-
-    private long startTimeColor = System.currentTimeMillis();
-
     private void saveColorToFile(final Bitmap bitmap) {
         if (System.currentTimeMillis() - startTimeColor < TIME_PERIOD) {
             return;
@@ -206,50 +243,6 @@ public class VisionRealSenseFragment extends Fragment {
             }
         }).start();
     }
-
-    private IImageState mIImageState = new IImageState() {
-
-        Runnable mRunnable;
-
-        @Override
-        public void updateImage(int type, final Bitmap bitmap) {
-            switch (type) {
-                case StreamType.COLOR:
-                    mRunnable = new Runnable() {
-                        @Override
-                        public void run() {
-                            mColorImageView.setImageBitmap(bitmap);
-                        }
-                    };
-                    //saveColorToFile(bitmap);
-                    break;
-                case StreamType.DEPTH:
-                    mRunnable = new Runnable() {
-                        @Override
-                        public void run() {
-                            mDepthImageView.setImageBitmap(bitmap);
-                        }
-                    };
-                    //saveDepthToFile(bitmap);
-                    break;
-                case StreamType.FISH_EYE:
-                    mRunnable = new Runnable() {
-                        @Override
-                        public void run() {
-                            mFishImageView.setImageBitmap(bitmap);
-                        }
-                    };
-                    break;            }
-
-            if (mRunnable != null) {
-                Objects.requireNonNull(getActivity()).runOnUiThread(mRunnable);
-            }
-        }
-    };
-
-    private static final int TIME_PERIOD = 5 * 1000;
-
-    private long startTimeDepth = System.currentTimeMillis();
 
     private void saveDepthToFile(final Bitmap bitmap) {
         if (System.currentTimeMillis() - startTimeDepth < TIME_PERIOD) {

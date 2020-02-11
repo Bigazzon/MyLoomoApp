@@ -46,6 +46,55 @@ public class Utils {
         return Float.parseFloat(text);
     }
 
+    static String saveFile(byte[] bytes) {
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        int fileNameSize = buffer.getInt();
+        int fileSize = buffer.getInt();
+        byte[] nameByte = new byte[fileNameSize];
+        int position = buffer.position();
+        Log.d(TAG, "nameSize=" + fileNameSize + ";fileSize=" + fileSize + ";p=" + position + ";length=" + bytes.length);
+        buffer.mark();
+        int i = 0;
+        while (buffer.hasRemaining()) {
+            nameByte[i] = buffer.get();
+            i++;
+            if (i == fileNameSize) {
+                break;
+            }
+        }
+        final String name = new String(nameByte);
+
+        byte[] fileByte = new byte[fileSize];
+        i = 0;
+        while (buffer.hasRemaining()) {
+            fileByte[i] = buffer.get();
+            i++;
+            if (i == fileSize) {
+                break;
+            }
+        }
+        File file = new File(name);
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(file);
+            fileOutputStream.write(fileByte);
+            Log.d(TAG, "onBufferMessageReceived: file successfully");
+            fileOutputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return name;
+    }
+
+    public static Camera getCameraInstance() {
+        Camera c = null;
+        try {
+            c = Camera.open(); // attempt to get a Camera instance
+        } catch (Exception e) {
+            // Camera is not available (in use or does not exist)
+        }
+        return c; // returns null if camera is unavailable
+    }
+
     private File createFile() {
         String fileName = "robot_to_mobile.txt";
         File file = new File(Environment.getExternalStorageDirectory().getPath() + "/" + fileName);
@@ -105,55 +154,5 @@ public class Utils {
         buffer.flip();
         byte[] messageByte = buffer.array();
         return messageByte;
-    }
-
-    static String saveFile(byte[] bytes) {
-        ByteBuffer buffer = ByteBuffer.wrap(bytes);
-        int fileNameSize = buffer.getInt();
-        int fileSize = buffer.getInt();
-        byte[] nameByte = new byte[fileNameSize];
-        int position = buffer.position();
-        Log.d(TAG, "nameSize=" + fileNameSize + ";fileSize=" + fileSize + ";p=" + position + ";length=" + bytes.length);
-        buffer.mark();
-        int i = 0;
-        while (buffer.hasRemaining()) {
-            nameByte[i] = buffer.get();
-            i++;
-            if (i == fileNameSize) {
-                break;
-            }
-        }
-        final String name = new String(nameByte);
-
-        byte[] fileByte = new byte[fileSize];
-        i = 0;
-        while (buffer.hasRemaining()) {
-            fileByte[i] = buffer.get();
-            i++;
-            if (i == fileSize) {
-                break;
-            }
-        }
-        File file = new File(name);
-        try {
-            FileOutputStream fileOutputStream = new FileOutputStream(file);
-            fileOutputStream.write(fileByte);
-            Log.d(TAG, "onBufferMessageReceived: file successfully");
-            fileOutputStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return name;
-    }
-
-    public static Camera getCameraInstance(){
-        Camera c = null;
-        try {
-            c = Camera.open(); // attempt to get a Camera instance
-        }
-        catch (Exception e){
-            // Camera is not available (in use or does not exist)
-        }
-        return c; // returns null if camera is unavailable
     }
 }

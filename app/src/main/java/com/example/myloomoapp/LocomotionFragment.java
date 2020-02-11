@@ -17,6 +17,7 @@ import com.segway.robot.sdk.locomotion.sbv.AngularVelocity;
 import com.segway.robot.sdk.locomotion.sbv.Base;
 import com.segway.robot.sdk.locomotion.sbv.LinearVelocity;
 
+import java.text.DecimalFormat;
 import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -38,14 +39,15 @@ public class LocomotionFragment extends Fragment implements View.OnClickListener
     private Head fHead;
     private Base fBase;
 
-    private TextView mWorldYawValue;
+    private TextView mYawValue;
     private TextView mWorldPitchValue;
-    private TextView mBaseYawValue;
+    private TextView mOdometryValue;
     private TextView mBasePitchValue;
-    private TextView mAngularVelocity;
-    private TextView mLinearVelocity;
+    private TextView mBlank;
+    private TextView mVelocity;
 
     private View view;
+    DecimalFormat df = new DecimalFormat("#0.000");
 
     private Timer mTimer = new Timer();
     private TimerTask mTimerTask = new TimerTask() {
@@ -55,17 +57,18 @@ public class LocomotionFragment extends Fragment implements View.OnClickListener
                 @Override
                 public void run() {
                     // get robot head pitch value, the value is angle between head and base int the pitch direction.
-                    mBasePitchValue.setText(String.format("Base Pitch: %s", floatToString(fHead.getPitchRespectBase().getAngle())));
+                    mBasePitchValue.setText(String.format("Base Pitch: %s", df.format(fHead.getPitchRespectBase().getAngle())));
                     // get robot head yaw value, the value is angle between head and base int the yaw direction.
-                    mBaseYawValue.setText(String.format("Base Yaw: %s", floatToString(fHead.getYawRespectBase().getAngle())));
+                    Pose2D pose = fBase.getOdometryPose(-1);
+                    mOdometryValue.setText(String.format("Odo: x: %s, y: %s, θ: %s", df.format(pose.getX()), df.format(pose.getY()), df.format(pose.getTheta())));
                     // get robot head yaw value, the value is angle between head and world int the yaw direction.
-                    mWorldYawValue.setText(String.format("World Yaw: %s", floatToString(fHead.getWorldYaw().getAngle())));
+                    mYawValue.setText(String.format("Base / World Yaw: %s, %s", df.format(fHead.getYawRespectBase().getAngle()), df.format(fHead.getWorldYaw().getAngle())));
                     // get robot head pitch value, the value is angle between head and world int the pitch direction.
-                    mWorldPitchValue.setText(String.format("World Pitch: %s", floatToString(fHead.getWorldPitch().getAngle())));
-                    final AngularVelocity av = fBase.getAngularVelocity();
+                    mWorldPitchValue.setText(String.format("World Pitch: %s", df.format(fHead.getWorldPitch().getAngle())));
                     final LinearVelocity lv = fBase.getLinearVelocity();
-                    mAngularVelocity.setText(String.format("AngularVelocity: %s", av.getSpeed()));
-                    mLinearVelocity.setText(String.format("LinearVelocity: %s", lv.getSpeed()));
+                    final AngularVelocity av = fBase.getAngularVelocity();
+                    mVelocity.setText(String.format("Lin / Ang Vel: %s, %s", df.format(lv.getSpeed()), df.format(av.getSpeed())));
+                    mBlank.setText("");
                 }
             });
         }
@@ -184,9 +187,9 @@ public class LocomotionFragment extends Fragment implements View.OnClickListener
 
         mBasePitchValue = view.findViewById(R.id.base_pitch);
         mWorldPitchValue = view.findViewById(R.id.world_pitch);
-        mBaseYawValue = view.findViewById(R.id.base_yaw);
-        mWorldYawValue = view.findViewById(R.id.world_yaw);
-        mAngularVelocity = view.findViewById(R.id.angular_velocity);
-        mLinearVelocity = view.findViewById(R.id.linear_velocity);
+        mOdometryValue = view.findViewById(R.id.odometry);
+        mYawValue = view.findViewById(R.id.wb_yaw);
+        mVelocity = view.findViewById(R.id.velocity);
+        mBlank = view.findViewById(R.id.blank);
     }
 }

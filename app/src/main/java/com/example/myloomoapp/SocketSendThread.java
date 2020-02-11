@@ -3,7 +3,6 @@ package com.example.myloomoapp;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Environment;
-import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -26,7 +25,7 @@ public class SocketSendThread implements Runnable {
     private TimerTask timerTaskObj = new TimerTask() {
         public void run() {
             byte[] img_bytes;
-            if(MAGALLI) {
+            if (MAGALLI) {
                 /* Image Handling */
                 String img_path = Environment.getExternalStorageDirectory() + "/DCIM/test_magalli.jpg";
                 File image_file = new File(img_path);
@@ -39,8 +38,7 @@ public class SocketSendThread implements Runnable {
                 img_bytes = getBytesfromBitmap(bm);
 
                 mActivity.send_captured(img_bytes);
-            }
-            else {
+            } else {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
@@ -61,7 +59,7 @@ public class SocketSendThread implements Runnable {
         timerObj.schedule(timerTaskObj, 5000, 400);
     }
 
-    private byte[] getBytesfromBitmap(Bitmap bitmap){
+    private byte[] getBytesfromBitmap(Bitmap bitmap) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
         return stream.toByteArray();

@@ -3,8 +3,6 @@ package com.example.myloomoapp;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -14,14 +12,9 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
-import android.media.Image;
 import android.media.ImageReader;
 import android.os.Build;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
-
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
@@ -35,11 +28,9 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+
 import java.util.Collections;
 import java.util.Objects;
 
@@ -76,10 +67,66 @@ public class VisionCameraFragment extends Fragment {
     private CameraCaptureSession cameraCaptureSessions;
     private CaptureRequest.Builder captureRequestBuilder;
     private Size imageDimension;
+    private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
+        @Override
+        public void onOpened(@NonNull CameraDevice camera) {
+            //This is called when the camera is open
+            Log.e(TAG, "onOpened");
+            mCameraDevice = camera;
+            createCameraPreview();
+            updateTextureViewScaling(frame.getHeight());
+        }
+
+        @Override
+        public void onDisconnected(@NonNull CameraDevice camera) {
+            mCameraDevice.close();
+        }
+
+        @Override
+        public void onError(@NonNull CameraDevice camera, int error) {
+            mCameraDevice.close();
+            mCameraDevice = null;
+        }
+    };
     private ImageReader imageReader;
+    private TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
+        @Override
+        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+            //open your camera here
+            openCamera();
+        }
+
+        @Override
+        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+            // Transform you image captured size according to the surface width and height
+        }
+
+        @Override
+        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+            return false;
+        }
+
+        @Override
+        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+            //Log.d(TAG, "Surface Updated");
+        }
+    };
 
     VisionCameraFragment() {
     }
+    /*
+    private void openCameraOrRequestPermission(int width, int height) {
+        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.CAMERA)) {
+                //new Camera2BasicFragment.ConfirmationDialog().show(getChildFragmentManager(), "dialog");
+            } else {
+                ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.CAMERA}, 1);
+            }
+        } else {
+            openCamera(width, height);
+        }
+    }
+     */
 
     @Override
     public void onResume() {
@@ -98,23 +145,10 @@ public class VisionCameraFragment extends Fragment {
         int image_height = viewHeight * 4 / 3;
         params.width = viewHeight;
         params.height = image_height;
-        params.gravity= Gravity.CENTER;
-        Log.d(TAG, (params.width)+"x"+(params.height));
+        params.gravity = Gravity.CENTER;
+        Log.d(TAG, (params.width) + "x" + (params.height));
         mHeadImageView.setLayoutParams(params);
     }
-    /*
-    private void openCameraOrRequestPermission(int width, int height) {
-        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.CAMERA)) {
-                //new Camera2BasicFragment.ConfirmationDialog().show(getChildFragmentManager(), "dialog");
-            } else {
-                ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.CAMERA}, 1);
-            }
-        } else {
-            openCamera(width, height);
-        }
-    }
-     */
 
     @Override
     public void onPause() {
@@ -132,38 +166,19 @@ public class VisionCameraFragment extends Fragment {
         return view;
     }
 
-    private void init(){
+    private void init() {
         mHeadImageView = view.findViewById(R.id.head_view_main);
         mHeadImageView.setSurfaceTextureListener(textureListener);
         mHeadImageView.setRotation(270);
         frame = view.findViewById(R.id.frame2);
     }
 
-    private TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
-        @Override
-        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-            //open your camera here
-            openCamera();
-        }
-        @Override
-        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-            // Transform you image captured size according to the surface width and height
-        }
-        @Override
-        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-            return false;
-        }
-        @Override
-        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-            //Log.d(TAG, "Surface Updated");
-        }
-    };
-
     private void startBackgroundThread() {
         mBackgroundThread = new HandlerThread("Camera Background");
         mBackgroundThread.start();
         mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
     }
+
     private void stopBackgroundThread() {
         mBackgroundThread.quitSafely();
         try {
@@ -183,7 +198,7 @@ public class VisionCameraFragment extends Fragment {
             Surface surface = new Surface(texture);
             captureRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             captureRequestBuilder.addTarget(surface);
-            mCameraDevice.createCaptureSession(Collections.singletonList(surface), new CameraCaptureSession.StateCallback(){
+            mCameraDevice.createCaptureSession(Collections.singletonList(surface), new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
                     //The camera is already closed
@@ -194,6 +209,7 @@ public class VisionCameraFragment extends Fragment {
                     cameraCaptureSessions = cameraCaptureSession;
                     updatePreview();
                 }
+
                 @Override
                 public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
                     Toast.makeText(getContext(), "Configuration change", Toast.LENGTH_SHORT).show();
@@ -218,7 +234,7 @@ public class VisionCameraFragment extends Fragment {
             // Add permission for camera and let user grant the permission
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (Objects.requireNonNull(getContext()).checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(new String[] {Manifest.permission.CAMERA}, 1);
+                    requestPermissions(new String[]{Manifest.permission.CAMERA}, 1);
                 }
             }
             manager.openCamera(mCameraId, stateCallback, null);
@@ -228,28 +244,8 @@ public class VisionCameraFragment extends Fragment {
         Log.e(TAG, "ID Opened Camera: " + mCameraId);
     }
 
-    private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
-        @Override
-        public void onOpened(@NonNull CameraDevice camera) {
-            //This is called when the camera is open
-            Log.e(TAG, "onOpened");
-            mCameraDevice = camera;
-            createCameraPreview();
-            updateTextureViewScaling(frame.getHeight());
-        }
-        @Override
-        public void onDisconnected(@NonNull CameraDevice camera) {
-            mCameraDevice.close();
-        }
-        @Override
-        public void onError(@NonNull CameraDevice camera, int error) {
-            mCameraDevice.close();
-            mCameraDevice = null;
-        }
-    };
-
     private void updatePreview() {
-        if(null == mCameraDevice) {
+        if (null == mCameraDevice) {
             Log.e(TAG, "updatePreview error, return");
         }
         captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
