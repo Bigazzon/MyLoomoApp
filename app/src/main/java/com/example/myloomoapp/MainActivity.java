@@ -21,7 +21,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.SystemClock;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
@@ -43,7 +42,6 @@ import com.segway.robot.algo.Pose2D;
 import com.segway.robot.algo.PoseVLS;
 import com.segway.robot.algo.dts.BaseControlCommand;
 import com.segway.robot.algo.dts.DTSPerson;
-import com.segway.robot.algo.dts.PersonTrackingListener;
 import com.segway.robot.algo.dts.PersonTrackingProfile;
 import com.segway.robot.algo.dts.PersonTrackingWithPlannerListener;
 import com.segway.robot.sdk.base.bind.ServiceBinder;
@@ -86,6 +84,8 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
+    static int TIME_OUT = 5000;
+    static int SWITCH_MODE = 0;
     private static int REQUEST_CAMERA_PERMISSION = 200;
 
     static {
@@ -112,6 +112,9 @@ public class MainActivity extends AppCompatActivity {
     Thread send_thread;
     Thread receive_thread;
     byte[] img_bytes = null;
+    long startTime;
+    PersonTrackingProfile mPersonTrackingProfile;
+    DTS dts;
     private Socket socket;
     private CameraDevice mCameraDevice;
     private HandlerThread mBackgroundThread;
@@ -213,18 +216,52 @@ public class MainActivity extends AppCompatActivity {
             isBindV = false;
         }
     };
-
-
-
-
-
-    static int TIME_OUT = 5000;
-    long startTime;
-    PersonTrackingProfile mPersonTrackingProfile;
     private HeadPIDController mHeadPIDController = new HeadPIDController();
-    DTS dts;
-    static int SWITCH_MODE = 0;
     private Timer demoTimer = new Timer();
+    private PersonTrackingWithPlannerListener mPersonTrackingWithPlannerListener = new PersonTrackingWithPlannerListener() {
+        @Override
+        public void onPersonTrackingWithPlannerResult(DTSPerson person, BaseControlCommand baseControlCommand) {
+            if (person == null) {
+                if (System.currentTimeMillis() - startTime > TIME_OUT) {
+                    mHead.resetOrientation();
+                }
+                return;
+            }
+
+            startTime = System.currentTimeMillis();
+            mHead.setMode(Head.MODE_ORIENTATION_LOCK);
+            mHeadPIDController.updateTarget(person.getTheta(), person.getDrawingRect(), 480);
+
+            switch (baseControlCommand.getFollowState()) {
+                case BaseControlCommand.State.NORMAL_FOLLOW:
+                    setBaseVelocity(baseControlCommand.getLinearVelocity(), baseControlCommand.getAngularVelocity());
+                    break;
+                case BaseControlCommand.State.HEAD_FOLLOW_BASE:
+                    mBase.setControlMode(Base.CONTROL_MODE_FOLLOW_TARGET);
+                    mBase.updateTarget(0, person.getTheta());
+                    break;
+                case BaseControlCommand.State.SENSOR_ERROR:
+                    setBaseVelocity(0, 0);
+                    break;
+            }
+        }
+
+        private void setBaseVelocity(float linearVelocity, float angularVelocity) {
+            mBase.setControlMode(Base.CONTROL_MODE_RAW);
+            mBase.setLinearVelocity(linearVelocity);
+            mBase.setAngularVelocity(angularVelocity);
+        }
+
+        @Override
+        public void onPersonTrackingWithPlannerError(int errorCode, String message) {
+            try {
+                mSpeech.speak("CHAW", mTtsListener);
+                mSpeech.waitForSpeakFinish(10000);
+            } catch (VoiceException e) {
+                e.printStackTrace();
+            }
+        }
+    };
     TimerTask demoTask = new TimerTask() {
         public void run() {
             switch (SWITCH_MODE) {
@@ -271,56 +308,22 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
-
-    public void actionInitiateTrack() {
-        startTime = System.currentTimeMillis();
-        dts.startPlannerPersonTracking(null, mPersonTrackingProfile, 100 * 1000 * 1000, mPersonTrackingWithPlannerListener);
+    /*
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CAPTURE_IMAGE | requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                Bitmap bp = (Bitmap) Objects.requireNonNull(data.getExtras()).get("data");
+                head_view.setImageBitmap(bp);
+                Log.d(TAG, "FOUND IMAGE");
+            } else if (resultCode == RESULT_CANCELED) {
+                Log.d(TAG, "Error taking head camera image");
+            }
+        }
     }
-
-    private PersonTrackingWithPlannerListener mPersonTrackingWithPlannerListener = new PersonTrackingWithPlannerListener() {
-        @Override
-        public void onPersonTrackingWithPlannerResult(DTSPerson person, BaseControlCommand baseControlCommand) {
-            if (person == null) {
-                if (System.currentTimeMillis() - startTime > TIME_OUT) {
-                    mHead.resetOrientation();
-                }
-                return;
-            }
-
-            startTime = System.currentTimeMillis();
-            mHead.setMode(Head.MODE_ORIENTATION_LOCK);
-            mHeadPIDController.updateTarget(person.getTheta(), person.getDrawingRect(), 480);
-
-            switch (baseControlCommand.getFollowState()) {
-                case BaseControlCommand.State.NORMAL_FOLLOW:
-                    setBaseVelocity(baseControlCommand.getLinearVelocity(), baseControlCommand.getAngularVelocity());
-                    break;
-                case BaseControlCommand.State.HEAD_FOLLOW_BASE:
-                    mBase.setControlMode(Base.CONTROL_MODE_FOLLOW_TARGET);
-                    mBase.updateTarget(0, person.getTheta());
-                    break;
-                case BaseControlCommand.State.SENSOR_ERROR:
-                    setBaseVelocity(0, 0);
-                    break;
-            }
-        }
-
-        private void setBaseVelocity(float linearVelocity, float angularVelocity) {
-            mBase.setControlMode(Base.CONTROL_MODE_RAW);
-            mBase.setLinearVelocity(linearVelocity);
-            mBase.setAngularVelocity(angularVelocity);
-        }
-
-        @Override
-        public void onPersonTrackingWithPlannerError(int errorCode, String message) {
-            try {
-                mSpeech.speak("CHAW", mTtsListener);
-                mSpeech.waitForSpeakFinish(10000);
-            } catch (VoiceException e) {
-                e.printStackTrace();
-            }
-        }
-    };
+    */
+    private File file;
 
     /*
     private void openCamera() {
@@ -347,23 +350,6 @@ public class MainActivity extends AppCompatActivity {
         Log.e(TAG, "ID Opened Camera: " + mCameraId);
     }
     */
-
-    /*
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CAPTURE_IMAGE | requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
-            if (resultCode == RESULT_OK) {
-                Bitmap bp = (Bitmap) Objects.requireNonNull(data.getExtras()).get("data");
-                head_view.setImageBitmap(bp);
-                Log.d(TAG, "FOUND IMAGE");
-            } else if (resultCode == RESULT_CANCELED) {
-                Log.d(TAG, "Error taking head camera image");
-            }
-        }
-    }
-    */
-    private File file;
     final CameraCaptureSession.CaptureCallback captureCallbackListener = new CameraCaptureSession.CaptureCallback() {
         @Override
         public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
@@ -373,6 +359,11 @@ public class MainActivity extends AppCompatActivity {
         }
     };
     private TextureView textureView;
+
+    public void actionInitiateTrack() {
+        startTime = System.currentTimeMillis();
+        dts.startPlannerPersonTracking(null, mPersonTrackingProfile, 100 * 1000 * 1000, mPersonTrackingWithPlannerListener);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -441,7 +432,7 @@ public class MainActivity extends AppCompatActivity {
         mSpeech = Speaker.getInstance();
         mSpeech.bindService(getApplicationContext(), mSpeechServiceBindListener);
         mVision = Vision.getInstance();
-        if(SWITCH_MODE==2) {
+        if (SWITCH_MODE == 2) {
             mVision.bindService(this, mVisionServiceBindListener);
         }
         LocomotionFragment locomotionFragment = new LocomotionFragment(mHead, mBase);
@@ -476,7 +467,7 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         //Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         //startActivityForResult(intent, REQUEST_CAPTURE_IMAGE);
-        if(SWITCH_MODE>3) {
+        if (SWITCH_MODE > 3) {
             send_thread = new Thread(new SocketSendThread(this));
             send_thread.start();
             receive_thread = new Thread(new SocketReceiveThread(this));
@@ -489,7 +480,7 @@ public class MainActivity extends AppCompatActivity {
         //} else {
         //    textureView.setSurfaceTextureListener(textureListener);
         //}
-        if(SWITCH_MODE<3) {
+        if (SWITCH_MODE < 3) {
             demoTimer.schedule(demoTask, 10000);
         }
     }

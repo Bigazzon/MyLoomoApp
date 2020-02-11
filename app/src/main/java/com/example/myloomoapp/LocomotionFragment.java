@@ -1,15 +1,14 @@
 package com.example.myloomoapp;
 
 import android.os.Bundle;
-
-import androidx.fragment.app.Fragment;
-
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+
+import androidx.fragment.app.Fragment;
 
 import com.segway.robot.algo.Pose2D;
 import com.segway.robot.sdk.locomotion.head.Head;
@@ -25,17 +24,11 @@ import java.util.TimerTask;
 import static com.example.myloomoapp.Utils.BASE_YAW_ANGLE;
 import static com.example.myloomoapp.Utils.HEAD_PITCH_ANGLE;
 import static com.example.myloomoapp.Utils.STEP_SIZE;
-import static com.example.myloomoapp.Utils.floatToString;
 
 public class LocomotionFragment extends Fragment implements View.OnClickListener {
 
     private static final String TAG = "LocomotionFragment";
-
-    LocomotionFragment(Head head, Base base){
-        this.fHead = head;
-        this.fBase = base;
-    }
-
+    DecimalFormat df = new DecimalFormat("#0.000");
     private Head fHead;
     private Base fBase;
 
@@ -47,8 +40,6 @@ public class LocomotionFragment extends Fragment implements View.OnClickListener
     private TextView mVelocity;
 
     private View view;
-    DecimalFormat df = new DecimalFormat("#0.000");
-
     private Timer mTimer = new Timer();
     private TimerTask mTimerTask = new TimerTask() {
         @Override
@@ -73,6 +64,10 @@ public class LocomotionFragment extends Fragment implements View.OnClickListener
             });
         }
     };
+    LocomotionFragment(Head head, Base base) {
+        this.fHead = head;
+        this.fBase = base;
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -117,7 +112,7 @@ public class LocomotionFragment extends Fragment implements View.OnClickListener
                 fBase.cleanOriginalPoint();
                 Pose2D left_pose2D = fBase.getOdometryPose(-1);
                 fBase.setOriginalPoint(left_pose2D);
-                fBase.addCheckPoint(0, 0, (float)(BASE_YAW_ANGLE*Math.PI/180));
+                fBase.addCheckPoint(0, 0, (float) (BASE_YAW_ANGLE * Math.PI / 180));
                 // To move just the head
                 //float left_value = fHead.getYawRespectBase().getAngle();
                 //left_value += BASE_YAW_ANGLE*Math.PI/180;
@@ -129,7 +124,7 @@ public class LocomotionFragment extends Fragment implements View.OnClickListener
                 fBase.cleanOriginalPoint();
                 Pose2D right_pose2D = fBase.getOdometryPose(-1);
                 fBase.setOriginalPoint(right_pose2D);
-                fBase.addCheckPoint(0, 0, (float)(-BASE_YAW_ANGLE*Math.PI/180));
+                fBase.addCheckPoint(0, 0, (float) (-BASE_YAW_ANGLE * Math.PI / 180));
                 // To move just the head
                 //float right_value = fHead.getYawRespectBase().getAngle();
                 //right_value -= BASE_YAW_ANGLE*Math.PI/180;
@@ -139,14 +134,14 @@ public class LocomotionFragment extends Fragment implements View.OnClickListener
             case R.id.up:
                 Log.d(TAG, "HEAD UP");
                 float up_value = fHead.getWorldPitch().getAngle();
-                up_value += HEAD_PITCH_ANGLE*Math.PI/180;
+                up_value += HEAD_PITCH_ANGLE * Math.PI / 180;
                 fHead.setWorldPitch(up_value);
                 fHead.setHeadLightMode(8);
                 break;
             case R.id.down:
                 Log.d(TAG, "HEAD DOWN");
                 float down_value = fHead.getWorldPitch().getAngle();
-                down_value -= HEAD_PITCH_ANGLE*Math.PI/180;
+                down_value -= HEAD_PITCH_ANGLE * Math.PI / 180;
                 fHead.setWorldPitch(down_value);
                 fHead.setHeadLightMode(8);
                 break;
